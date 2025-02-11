@@ -16,7 +16,7 @@ class MoneyController extends Base
     function recharge(Request $request)
     {
         $amount = $request->post('amount');
-        $pay_type = $request->post('pay_type');
+        $pay_type = $request->post('pay_type');#支付方式:1=微信,2=支付宝
         $ordersn = Util::generateOrdersn();
         RechargeOrders::create([
             'user_id' => $request->user_id,
@@ -35,12 +35,12 @@ class MoneyController extends Base
     function getMoneyLog(Request $request)
     {
         $type = $request->post('type');
-        $month = $request->post('month');
-        $date = Carbon::parse($month);
+        $date = $request->post('date');
+        $status = $request->post('status'); #0=全部 1=支出，2=收入
+        $date = Carbon::parse($date);
         // 提取年份和月份
         $year = $date->year;
         $month = $date->month;
-        $status = $request->post('status'); #0=全部 1=支出，2=收入
         $rows = UsersScoreLog::where(['type' => $type])
             ->when(!empty($status), function (Builder $query) use ($status) {
                 if ($status == 1) {

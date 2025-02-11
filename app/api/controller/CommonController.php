@@ -35,13 +35,21 @@ class CommonController extends Base
     #获取分类
     function getClass(Request $request)
     {
-        $type = $request->post('type');#类型:1=男生,2=女生,3=短剧分类,4=推荐分类
+        $type = $request->post('type');#类型:1=男生,2=女生,3=短剧分类,4=推荐分类,5=男生子类,6=女生子类
         $rows = Classify::when(!empty($type),function (Builder $builder)use($type){
-            if ($type == 4){
-                $builder->where('pid','<>',0)->whereIn('type',[1,2]);
-            }else{
+            if ($type == 1 || $type == 2 || $type == 3){
                 $builder->with(['children'])->where('pid',0)->where(['type'=>$type]);
             }
+            if ($type == 4){
+                $builder->where('pid','<>',0)->whereIn('type',[1,2]);
+            }
+            if ($type == 5){
+                $builder->where('pid','<>',0)->where('type',1);
+            }
+            if ($type == 6){
+                $builder->where('pid','<>',0)->where('type',2);
+            }
+
         })->orderByDesc('weigh')->get();
         return $this->success('成功',$rows);
     }

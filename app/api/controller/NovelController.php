@@ -4,6 +4,8 @@ namespace app\api\controller;
 
 use app\admin\model\Novel;
 use app\admin\model\NovelDetail;
+use app\admin\model\UsersBookrack;
+use app\admin\model\UsersReadLog;
 use app\api\basic\Base;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,20 +23,17 @@ class NovelController extends Base
         $keyword = $request->post('keyword');#关键字
         $text_num = $request->post('text_num');#文字数:0=不限,1=10万字以内,2=30万字以内,3=50万字以内,4=30万字以上,5=50万字以上
         $creation_status = $request->post('creation_status');#作品状态:0=不限,1=完结,2=半年内完结,3=连载中,4=3日内更新,5=7日内更新,6=1月内更新
-        $tag_count = count($tag_ids);
-        if ($tag_count >= 4){
+        $tag_count = !empty($tag_ids) ? count($tag_ids) : 0;
+        if ($tag_count >= 4) {
             return $this->fail('标签不能超过4个');
         }
         $rows = Novel::
-        when(!empty($tag_ids), function (Builder $builder) use ($tag_ids) {
-            $builder->where(function ($query) use ($tag_ids) {
-                foreach ($tag_ids as $tagId) {
-                    $query->whereHas('tags', function ($query) use ($tagId) {
-                        $query->where('id', $tagId);
-                    });
-                }
-            });
-        })
+        where('status', 1)
+            ->when(!empty($tag_count), function (Builder $builder) use ($tag_ids) {
+                $builder->whereHas('tags', function ($query) use ($tag_ids) {
+                    $query->whereIn('wa_classify.id', $tag_ids);
+                });
+            })
             ->when(!empty($creation_status), function (Builder $builder) use ($creation_status) {
                 if ($creation_status == 1) {
                     $builder->where('creation_status', 1);
@@ -114,14 +113,18 @@ class NovelController extends Base
     {
         $novel_id = $request->post('novel_id');
         $novel = Novel::find($novel_id);
+        $novel->setAttribute('bookrack_status', UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $novel_id)->exists());
         return $this->success('成功', $novel);
     }
 
     #章节列表
     function getChapterList(Request $request)
     {
+        $order = $request->post('order','asc');
         $novel_id = $request->post('novel_id');
-        $rows = NovelDetail::where('novel_id', $novel_id)->paginate()->items();
+        $rows = NovelDetail::with(['readLog'=>function ($builder)use($request) {
+            $builder->where('user_id', $request->user_id);
+        }])->where('novel_id', $novel_id)->orderBy('weigh',$order)->paginate()->items();
         return $this->success('成功', $rows);
     }
 
@@ -129,9 +132,45 @@ class NovelController extends Base
     function getChapterDetail(Request $request)
     {
         $detail_id = $request->post('detail_id');
-        $detail = NovelDetail::find($detail_id);
+        #获取小说详情
+        #获取小说详情
+        $detail = NovelDetail::with(['readLog'=>function ($builder)use($request) {
+                $builder->where('user_id', $request->user_id);
+        }])->find($detail_id);
         return $this->success('成功', $detail);
     }
 
+    #详情-推荐
+    function getRecommendOfNovel(Request $request)
+    {
+        $novel_id = $request->post('novel_id');
+        $row = Novel::find($novel_id);
+        $rows = Novel::where('class_id', $row->class_id)->where('id', '<>', $novel_id)->inRandomOrder()->take(4)->get();
+        return $this->success('成功', $rows);
+    }
 
+    #上下书架
+    function upBookrack(Request $request)
+    {
+        $novel_id = $request->post('novel_id');
+        $row = UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $novel_id)->first();
+        if ($row) {
+            $row->delete();
+            $result = false;
+        } else {
+            UsersBookrack::create(['user_id' => $request->user_id, 'novel_id' => $novel_id]);
+            $result = true;
+        }
+        return $this->success('成功', $result);
+    }
+
+    #同步小说阅读进度
+    function updateReadLog(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $rate = $request->post('rate');
+        $detail = NovelDetail::find($detail_id);
+        UsersReadLog::updateOrCreate(['user_id' => $request->user_id, 'novel_id' => $detail->novel_id], ['novel_detail_id' => $detail_id, 'novel_id' => $detail->novel_id, 'user_id' => $request->user_id, 'rate' => $rate]);
+        return $this->success('成功');
+    }
 }
