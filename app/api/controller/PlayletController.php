@@ -11,6 +11,7 @@ use support\Request;
 class PlayletController extends Base
 {
 
+    #获取列表
     function getPlayletList(Request $request)
     {
         $type = $request->post('type');#类型:1=本周热门 2=本周排行 3=最近热播
@@ -45,6 +46,7 @@ class PlayletController extends Base
     }
 
 
+    #获取详情
     function getPlayletDetail(Request $request)
     {
         $playlet_id = $request->post('playlet_id');

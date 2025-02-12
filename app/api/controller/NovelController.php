@@ -2,6 +2,7 @@
 
 namespace app\api\controller;
 
+use app\admin\model\Classify;
 use app\admin\model\Novel;
 use app\admin\model\NovelDetail;
 use app\admin\model\NovelOrders;
@@ -76,12 +77,16 @@ class NovelController extends Base
             ->when(!empty($keyword), function (Builder $query) use ($keyword) {
                 $query->where('name', 'like', '%' . $keyword . '%')->orWhere('name', 'like', '%' . $keyword . '%');
             })
-            ->when(!empty($sex), function (Builder $query) use ($sex) {
-                $query->where('sex', $sex);
-            })
+
             ->when(!empty($class_id), function (Builder $query) use ($class_id) {
                 $query->where('class_id', $class_id);
             })
+
+            ->when(!empty($sex), function (Builder $query) use ($sex) {
+                $class_ids = Classify::where('type',$sex)->where('pid',0)->pluck('id')->toArray();
+                $query->whereIn('class_id', $class_ids);
+            })
+
             ->when(!empty($type), function (Builder $query) use ($type) {
                 if ($type == 1) {
                     $query->orderByDesc('read_num');

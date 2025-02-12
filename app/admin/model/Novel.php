@@ -34,6 +34,7 @@ use plugin\admin\app\model\Base;
  * @property-read mixed $vip_text
  * @property-read \app\admin\model\Classify|null $class
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $tags
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\NovelDetail> $detail
  * @mixin \Eloquent
  */
 class Novel extends Base
@@ -58,6 +59,11 @@ class Novel extends Base
     function class()
     {
         return $this->belongsTo(Classify::class, 'class_id', 'id');
+    }
+
+    function detail()
+    {
+        return $this->hasMany(NovelDetail::class, 'novel_id', 'id');
     }
 
     function tags()

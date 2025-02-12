@@ -21,6 +21,7 @@ use plugin\admin\app\model\Base;
  * @property string $image 封面
  * @property string $video 视频
  * @property int $index 剧集索引
+ * @property-read \app\admin\model\Playlet|null $playlet
  * @mixin \Eloquent
  */
 class PlayletDetail extends Base
@@ -43,6 +44,11 @@ class PlayletDetail extends Base
     protected $fillable = [
         'playlet_id', 'name', 'content', 'price','video','image'
     ];
+
+    function playlet()
+    {
+        return $this->belongsTo(Playlet::class, 'playlet_id', 'id');
+    }
 
 
 }

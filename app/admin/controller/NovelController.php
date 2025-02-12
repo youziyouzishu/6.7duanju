@@ -81,10 +81,15 @@ class NovelController extends Crud
     {
         if ($request->method() === 'POST') {
             $id = $request->post('id');
+            $status = $request->post('status');
+            $row = $this->model->find($id);
+            if ($row->status == 0 && $status == 1 && $row->detail->isEmpty()){
+                return $this->fail('请先添加章节');
+            }
             $tags = $request->post('tags');
             $tags = explode(',', $tags);
             if (is_array($tags) && !empty($tags)) {
-                $this->model->find($id)->tags()->sync($tags);
+                $row->tags()->sync($tags);
             }
             return parent::update($request);
         }

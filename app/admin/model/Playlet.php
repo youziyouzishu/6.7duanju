@@ -21,6 +21,10 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Playlet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Playlet query()
  * @property int $class_id 分类
+ * @property-read \app\admin\model\Classify|null $class
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\PlayletDetail> $detail
+ * @property-read mixed $vip_text
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $tags
  * @mixin \Eloquent
  */
 class Playlet extends Base
@@ -49,6 +53,11 @@ class Playlet extends Base
     function tags()
     {
         return $this->belongsToMany(Classify::class, PlayletClass::class, 'playlet_id', 'class_id')->withTimestamps();
+    }
+
+    function detail()
+    {
+        return $this->hasMany(PlayletDetail::class, 'playlet_id', 'id');
     }
 
     function getVipTextAttribute($value)

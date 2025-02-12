@@ -117,6 +117,9 @@
 					},{
 						title: "短剧",align: "center",
 						field: "playlet_id",
+                        templet: function(d) {
+                            return d.playlet?d.playlet.name:'';
+                        }
 					},{
 						title: "封面",align: "center",
 						field: "image",
