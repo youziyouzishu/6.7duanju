@@ -4,6 +4,8 @@ namespace app\api\controller;
 
 use app\admin\model\Novel;
 use app\admin\model\NovelDetail;
+use app\admin\model\NovelOrders;
+use app\admin\model\User;
 use app\admin\model\UsersBookrack;
 use app\admin\model\UsersReadLog;
 use app\api\basic\Base;
@@ -114,6 +116,14 @@ class NovelController extends Base
         $novel_id = $request->post('novel_id');
         $novel = Novel::find($novel_id);
         $novel->setAttribute('bookrack_status', UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $novel_id)->exists());
+        $readlog = UsersReadLog::where('user_id', $request->user_id)->where('novel_id', $novel_id)->first();
+        if ($readlog){
+            $novel->setAttribute('chapter_index', $readlog->novelDetail->index);
+            $novel->setAttribute('chapter_name', $readlog->novelDetail->name);
+        }else{
+            $novel->setAttribute('chapter_index', 0);
+            $novel->setAttribute('chapter_name', '');
+        }
         return $this->success('成功', $novel);
     }
 
@@ -124,7 +134,16 @@ class NovelController extends Base
         $novel_id = $request->post('novel_id');
         $rows = NovelDetail::with(['readLog'=>function ($builder)use($request) {
             $builder->where('user_id', $request->user_id);
-        }])->where('novel_id', $novel_id)->orderBy('weigh',$order)->paginate()->items();
+        }])->where('novel_id', $novel_id)->orderBy('index',$order)->paginate()->items();
+        $lock = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $novel_id)->where('type', 2)->exists();#整本
+        foreach ($rows as $row) {
+            $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id',$row->id)->where('type', 1)->exists();
+            if ($lock || $chapter || $row->price == 0){
+                $row->setAttribute('lock', false);
+            }else{
+                $row->setAttribute('lock', true);
+            }
+        }
         return $this->success('成功', $rows);
     }
 
@@ -133,11 +152,17 @@ class NovelController extends Base
     {
         $detail_id = $request->post('detail_id');
         #获取小说详情
-        #获取小说详情
-        $detail = NovelDetail::with(['readLog'=>function ($builder)use($request) {
+        $row = NovelDetail::with(['readLog'=>function ($builder)use($request) {
                 $builder->where('user_id', $request->user_id);
         }])->find($detail_id);
-        return $this->success('成功', $detail);
+        $lock = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $row->novel_id)->where('type', 2)->exists();#整本
+        $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id',$row->id)->where('type', 1)->exists();
+        if ($lock || $chapter || $row->price == 0){
+            $row->setAttribute('lock', false);
+        }else{
+            $row->setAttribute('lock', true);
+        }
+        return $this->success('成功', $row);
     }
 
     #详情-推荐
@@ -172,5 +197,91 @@ class NovelController extends Base
         $detail = NovelDetail::find($detail_id);
         UsersReadLog::updateOrCreate(['user_id' => $request->user_id, 'novel_id' => $detail->novel_id], ['novel_detail_id' => $detail_id, 'novel_id' => $detail->novel_id, 'user_id' => $request->user_id, 'rate' => $rate]);
         return $this->success('成功');
+    }
+
+    #查询购买整本价格
+    function getPrice(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $chapter = NovelDetail::find($detail_id);
+        $user = User::find($request->user_id);
+        //查询出剩余未购买的章节
+        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request,$chapter) {
+            $query->select('novel_detail_id')->from('wa_novel_orders')->where('novel_id', $chapter->novel_id)->where('user_id', $request->user_id)->where('type', 1);
+        })->sum('price');
+        return $this->success('成功', ['total_price'=>$totalPrice,'balance'=>$user->money]);
+    }
+
+    // 购买章节
+    public function purchaseChapter(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $user = User::find($request->user_id);
+        $chapter = NovelDetail::find($detail_id);
+
+        if (!$user || !$chapter) {
+            return $this->fail('用户或章节不存在');
+        }
+
+
+        $already = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id', $detail_id)->where('type', 1)->exists();
+        if ($already) {
+            return $this->fail('已购买过此章节');
+        }
+
+        if ($user->money < $chapter->price) {
+            return $this->fail('金币不足');
+        }
+
+        User::score(-$chapter->price, $request->user_id, '购买章节', 'money');
+
+        // 记录购买记录
+        NovelOrders::create([
+            'user_id'=>$request->user_id,
+            'novel_id' => $chapter->novel_id,
+            'novel_detail_id'=>$detail_id,
+            'amount'=>$chapter->price,
+            'type' => 1
+        ]);
+        return $this->success('购买成功');
+    }
+
+    // 购买整本小说
+    public function purchaseNovel(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+
+        $user = User::find($request->user_id);
+        $chapter = NovelDetail::find($detail_id);
+
+        if (!$user || !$chapter) {
+            return $this->fail('用户或章节不存在');
+        }
+
+        $already = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $chapter->novel_id)->where('type', 2)->exists();
+        if ($already) {
+            return $this->fail('已购买过整本小说');
+        }
+        //查询出剩余未购买的章节
+        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request,$chapter) {
+            $query->select('novel_detail_id')->from('wa_novel_orders')->where('user_id', $request->user_id)->where('novel_id', $chapter->novel_id)->where('type', 1);
+        })->sum('price');
+
+
+        if ($user->money < $totalPrice) {
+            return $this->fail('金币不足');
+        }
+
+        // 扣除用户金币
+        User::score(-$totalPrice, $request->user_id, '购买小说', 'money');
+
+        // 记录购买记录
+        NovelOrders::create([
+            'user_id'=>$request->user_id,
+            'novel_id' =>$chapter->novel_id,
+            'amount'=>$totalPrice,
+            'type' => 2
+        ]);
+        return $this->success('购买成功');
     }
 }

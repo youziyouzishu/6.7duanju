@@ -15,9 +15,20 @@
                 <form class="layui-form top-search-from">
                     
                     <div class="layui-form-item">
+                        <label class="layui-form-label">主键</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="id" value="" class="layui-input">
+                        </div>
+                    </div>
+                    
+                    <div class="layui-form-item">
                         <label class="layui-form-label">创建时间</label>
                         <div class="layui-input-block">
-                            <input type="text" name="created_at" id="created_at" autocomplete="off" class="layui-input">
+                            <div class="layui-input-block" id="created_at">
+                                <input type="text" autocomplete="off" name="created_at[]" id="created_at-date-start" class="layui-input inline-block" placeholder="开始时间">
+                                -
+                                <input type="text" autocomplete="off" name="created_at[]" id="created_at-date-end" class="layui-input inline-block" placeholder="结束时间">
+                            </div>
                         </div>
                     </div>
                     
@@ -47,18 +58,18 @@
 
         <!-- 表格顶部工具栏 -->
         <script type="text/html" id="table-toolbar">
-            <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add" permission="admin.noveldetail.insert">
+            <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add" permission="admin.playletdetail.insert">
                 <i class="layui-icon layui-icon-add-1"></i>新增
             </button>
-            <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove" permission="admin.noveldetail.delete">
+            <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove" permission="admin.playletdetail.delete">
                 <i class="layui-icon layui-icon-delete"></i>删除
             </button>
         </script>
 
         <!-- 表格行工具栏 -->
         <script type="text/html" id="table-bar">
-            <button class="pear-btn pear-btn-xs tool-btn" lay-event="edit" permission="admin.noveldetail.update">编辑</button>
-            <button class="pear-btn pear-btn-xs tool-btn" lay-event="remove" permission="admin.noveldetail.delete">删除</button>
+            <button class="pear-btn pear-btn-xs tool-btn" lay-event="edit" permission="admin.playletdetail.update">编辑</button>
+            <button class="pear-btn pear-btn-xs tool-btn" lay-event="remove" permission="admin.playletdetail.delete">删除</button>
         </script>
 
         <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
@@ -68,19 +79,20 @@
         
         <script>
 
-            let novel_id = layui.url().search['novel_id'];
             // 相关常量
+            let palylet_id = layui.url().search['palylet_id'];
             const PRIMARY_KEY = "id";
-            const SELECT_API = "/admin/novel-detail/select?novel_id="+novel_id;
-            const UPDATE_API = "/admin/novel-detail/update";
-            const DELETE_API = "/admin/novel-detail/delete";
-            const INSERT_URL = "/admin/novel-detail/insert?novel_id="+novel_id;
-            const UPDATE_URL = "/admin/novel-detail/update";
+            const SELECT_API = "/admin/playlet-detail/select?palylet_id="+palylet_id;
+            const UPDATE_API = "/admin/playlet-detail/update";
+            const DELETE_API = "/admin/playlet-detail/delete";
+            const INSERT_URL = "/admin/playlet-detail/insert?palylet_id="+palylet_id;
+            const UPDATE_URL = "/admin/playlet-detail/update";
             
             // 字段 创建时间 created_at
             layui.use(["laydate"], function() {
                 layui.laydate.render({
                     elem: "#created_at",
+                    range: ["#created_at-date-start", "#created_at-date-end"],
                     type: "datetime",
                 });
             })
@@ -101,24 +113,38 @@
 					},{
 						title: "主键",align: "center",
 						field: "id",
+						sort: true,
 					},{
-						title: "小说",align: "center",
-						field: "novel_id",
-                        templet: function(d) {
-                            return d.novel?d.novel.name:'';
-                        }
+						title: "短剧",align: "center",
+						field: "palylet_id",
 					},{
-						title: "章节名称",align: "center",
+						title: "封面",align: "center",
+						field: "image",
+						templet: function (d) {
+							return '<img src="'+encodeURI(d['image'])+'" style="max-width:32px;max-height:32px;" alt="" />'
+						}
+					},{
+						title: "视频",align: "center",
+						field: "video",
+						templet: function (d) {
+							return '<a href="' + encodeURI(d['video']) + '" target="_blank">' + util.escape(d['video']) + '</a>';
+						}
+					},{
+						title: "名称",align: "center",
 						field: "name",
+					},{
+						title: "介绍",align: "center",
+						field: "content",
 					},{
 						title: "价格",align: "center",
 						field: "price",
 					},{
-                        title: "章节索引",align: "center",
+                        title: "剧集索引",align: "center",
                         field: "index",
                     },{
 						title: "创建时间",align: "center",
 						field: "created_at",
+						sort: true,
 					},{
 						title: "更新时间",align: "center",
 						field: "updated_at",
@@ -232,7 +258,7 @@
                         title: "修改",
                         shade: 0.1,
                         maxmin: true,
-                        area: [common.isModile()?"100%":"700px", common.isModile()?"100%":"650px"],
+                        area: [common.isModile()?"100%":"500px", common.isModile()?"100%":"450px"],
                         content: UPDATE_URL + "?" + PRIMARY_KEY + "=" + value
                     });
                 }

@@ -21,6 +21,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NovelDetail query()
  * @property-read \app\admin\model\Novel|null $novel
  * @property-read \app\admin\model\UsersReadLog|null $readLog
+ * @property int $index 章节索引
  * @mixin \Eloquent
  */
 class NovelDetail extends Base
@@ -48,6 +49,7 @@ class NovelDetail extends Base
     {
         return $this->hasOne(UsersReadLog::class, 'novel_detail_id', 'id');
     }
+
 
 
 

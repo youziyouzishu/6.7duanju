@@ -18,6 +18,8 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PlayletDetail newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PlayletDetail newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PlayletDetail query()
+ * @property string $image 封面
+ * @property string $video 视频
  * @mixin \Eloquent
  */
 class PlayletDetail extends Base
@@ -38,7 +40,7 @@ class PlayletDetail extends Base
 
 
     protected $fillable = [
-        'palylet_id', 'name', 'content', 'price',
+        'palylet_id', 'name', 'content', 'price','video','image'
     ];
 
 

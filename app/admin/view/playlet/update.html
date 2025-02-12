@@ -14,32 +14,46 @@
 
             <div class="mainBox">
                 <div class="main-container mr-5">
-
+                    
                     <div class="layui-form-item">
-                        <label class="layui-form-label">章节名称</label>
+                        <label class="layui-form-label">名称</label>
                         <div class="layui-input-block">
                             <input type="text" name="name" value="" class="layui-input">
                         </div>
                     </div>
                     
                     <div class="layui-form-item">
-                        <label class="layui-form-label">内容</label>
+                        <label class="layui-form-label">封面</label>
                         <div class="layui-input-block">
-                            <textarea id="content" name="content" class="layui-textarea"></textarea>
+                            <img class="img-3" src=""/>
+                            <input type="text" style="display:none" name="image" value="" />
+                            <button type="button" class="pear-btn pear-btn-primary pear-btn-sm" id="image"  permission="app.admin.upload.image">
+                                <i class="layui-icon layui-icon-upload"></i>上传图片
+                            </button>
+                            <button type="button" class="pear-btn pear-btn-primary pear-btn-sm" id="attachment-choose-image"  permission="app.admin.upload.attachment">
+                                <i class="layui-icon layui-icon-align-left"></i>选择图片
+                            </button>
                         </div>
                     </div>
                     
                     <div class="layui-form-item">
-                        <label class="layui-form-label">价格</label>
+                        <label class="layui-form-label">VIP</label>
                         <div class="layui-input-block">
-                            <input type="text" name="price" value="" class="layui-input">
+                            <div name="vip" id="vip" value="" ></div>
                         </div>
                     </div>
-
+                    
                     <div class="layui-form-item">
-                        <label class="layui-form-label">章节索引</label>
+                        <label class="layui-form-label">介绍</label>
                         <div class="layui-input-block">
-                            <input type="number" name="index" value="0" class="layui-input">
+                            <input type="text" name="content" value="" class="layui-input">
+                        </div>
+                    </div>
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block">
+                            <div name="status" id="status" value="" ></div>
                         </div>
                     </div>
                     
@@ -68,8 +82,8 @@
 
             // 相关接口
             const PRIMARY_KEY = "id";
-            const SELECT_API = "/admin/novel-detail/select" + location.search;
-            const UPDATE_API = "/admin/novel-detail/update";
+            const SELECT_API = "/admin/playlet/select" + location.search;
+            const UPDATE_API = "/admin/playlet/update";
 
             // 获取数据库记录
             layui.use(["form", "util", "popup"], function () {
@@ -95,17 +109,65 @@
                             }
                         });
                         
-                        // 字段 内容 content
-                        layui.use(["tinymce"], function() {
-                            var tinymce = layui.tinymce
-                            var edit = tinymce.render({
-                                elem: "#content",
-                                height: 350,
-                                images_upload_url: "/app/admin/upload/image",
+                        // 字段 封面 image
+                        layui.use(["upload", "layer"], function() {
+                            let input = layui.$("#image").prev();
+                            input.prev().attr("src", input.val());
+                            layui.$("#attachment-choose-image").on("click", function() {
+                                parent.layer.open({
+                                    type: 2,
+                                    title: "选择附件",
+                                    content: "/app/admin/upload/attachment?ext=jpg,jpeg,png,gif,bmp",
+                                    area: ["95%", "90%"],
+                                    success: function (layero, index) {
+                                        parent.layui.$("#layui-layer" + index).data("callback", function (data) {
+                                            input.val(data.url).prev().attr("src", data.url);
+                                        });
+                                    }
+                                });
                             });
-                            edit.on("blur", function(){
-                                layui.$("#content").val(edit.getContent());
+                            layui.upload.render({
+                                elem: "#image",
+                                acceptMime: "image/gif,image/jpeg,image/jpg,image/png",
+                                url: "/app/admin/upload/image",
+                                field: "__file__",
+                                done: function (res) {
+                                    if (res.code > 0) return layui.layer.msg(res.msg);
+                                    this.item.prev().val(res.data.url).prev().attr("src", res.data.url);
+                                }
                             });
+                        });
+                        
+                        // 字段 VIP:0=否,1=是 vip
+                        layui.use(["jquery", "xmSelect"], function() {
+                            let value = layui.$("#vip").attr("value");
+                            let initValue = value ? value.split(",") : [];
+                            layui.xmSelect.render({
+                                el: "#vip",
+                                name: "vip",
+                                filterable: true,
+                                initValue: initValue,
+                                data: [{"value":"0","name":"否"},{"value":"1","name":"是"}],
+                                model: {"icon":"hidden","label":{"type":"text"}},
+                                clickClose: true,
+                                radio: true,
+                            })
+                        });
+                        
+                        // 字段 状态:0=下架,1=上架 status
+                        layui.use(["jquery", "xmSelect"], function() {
+                            let value = layui.$("#status").attr("value");
+                            let initValue = value ? value.split(",") : [];
+                            layui.xmSelect.render({
+                                el: "#status",
+                                name: "status",
+                                filterable: true,
+                                initValue: initValue,
+                                data: [{"value":"0","name":"下架"},{"value":"1","name":"上架"}],
+                                model: {"icon":"hidden","label":{"type":"text"}},
+                                clickClose: true,
+                                radio: true,
+                            })
                         });
                         
                         

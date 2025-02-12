@@ -24,6 +24,7 @@ class MoneyController extends Base
             'ordersn' => $ordersn,
             'pay_amount' => $amount,
         ]);
+
         try {
             $result = Pay::pay($pay_type, $amount, $ordersn, '充值金币', 'recharge');
         } catch (\Throwable $e) {

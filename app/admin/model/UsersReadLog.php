@@ -19,6 +19,8 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersReadLog newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersReadLog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersReadLog query()
+ * @property-read \app\admin\model\Novel|null $novel
+ * @property-read \app\admin\model\NovelDetail|null $novelDetail
  * @mixin \Eloquent
  */
 class UsersReadLog extends Base
@@ -43,6 +45,16 @@ class UsersReadLog extends Base
         'novel_detail_id',
         'rate',
     ];
+
+    function novelDetail()
+    {
+        return $this->belongsTo(NovelDetail::class, 'novel_detail_id', 'id');
+    }
+
+    function novel()
+    {
+        return $this->belongsTo(Novel::class, 'novel_id', 'id');
+    }
 
 
 
