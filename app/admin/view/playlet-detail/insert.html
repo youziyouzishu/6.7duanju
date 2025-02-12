@@ -13,13 +13,7 @@
 
             <div class="mainBox">
                 <div class="main-container mr-5">
-                    
-<!--                    <div class="layui-form-item">-->
-<!--                        <label class="layui-form-label">短剧</label>-->
-<!--                        <div class="layui-input-block">-->
-<!--                            <input type="number" name="palylet_id" value="0" class="layui-input">-->
-<!--                        </div>-->
-<!--                    </div>-->
+
                     
                     <div class="layui-form-item">
                         <label class="layui-form-label">封面</label>
@@ -101,7 +95,7 @@
         
         <script>
 
-            let palylet_id = layui.url().search['palylet_id'];
+            let playlet_id = layui.url().search['playlet_id'];
             // 相关接口
             const INSERT_API = "/admin/playlet-detail/insert";
             
@@ -177,7 +171,7 @@
                     identity: [/(^$)|(^\d{15}$)|(^\d{17}(x|X|\d)$)/, "请输入正确的身份证号"]
                 });
                 layui.form.on("submit(save)", function (data) {
-                    data.field.palylet_id = palylet_id;
+                    data.field.playlet_id = playlet_id;
                     layui.$.ajax({
                         url: INSERT_API,
                         type: "POST",

@@ -80,12 +80,12 @@
         <script>
 
             // 相关常量
-            let palylet_id = layui.url().search['palylet_id'];
+            let playlet_id = layui.url().search['playlet_id'];
             const PRIMARY_KEY = "id";
-            const SELECT_API = "/admin/playlet-detail/select?palylet_id="+palylet_id;
+            const SELECT_API = "/admin/playlet-detail/select?playlet_id="+playlet_id;
             const UPDATE_API = "/admin/playlet-detail/update";
             const DELETE_API = "/admin/playlet-detail/delete";
-            const INSERT_URL = "/admin/playlet-detail/insert?palylet_id="+palylet_id;
+            const INSERT_URL = "/admin/playlet-detail/insert?playlet_id="+playlet_id;
             const UPDATE_URL = "/admin/playlet-detail/update";
             
             // 字段 创建时间 created_at
@@ -116,7 +116,7 @@
 						sort: true,
 					},{
 						title: "短剧",align: "center",
-						field: "palylet_id",
+						field: "playlet_id",
 					},{
 						title: "封面",align: "center",
 						field: "image",

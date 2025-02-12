@@ -9,7 +9,7 @@ use plugin\admin\app\model\Base;
  * 
  *
  * @property int $id 主键
- * @property int $palylet_id 短剧
+ * @property int $playlet_id 短剧
  * @property string $name 名称
  * @property string $content 介绍
  * @property string $price 价格
@@ -20,6 +20,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PlayletDetail query()
  * @property string $image 封面
  * @property string $video 视频
+ * @property int $index 剧集索引
  * @mixin \Eloquent
  */
 class PlayletDetail extends Base
@@ -40,7 +41,7 @@ class PlayletDetail extends Base
 
 
     protected $fillable = [
-        'palylet_id', 'name', 'content', 'price','video','image'
+        'playlet_id', 'name', 'content', 'price','video','image'
     ];
 
 

@@ -19,7 +19,6 @@ use plugin\admin\app\model\Base;
  * @property int $creation_status 状态:0=连载中,1=已完结
  * @property float $score 评分
  * @property string $content 简介
- * @property int $sex 性别:1=男,2=女
  * @property \Illuminate\Support\Carbon|null $created_at 创建时间
  * @property \Illuminate\Support\Carbon|null $updated_at 更新时间
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Novel newModelQuery()
@@ -32,7 +31,6 @@ use plugin\admin\app\model\Base;
  * @property string|null $finish_time 完结时间
  * @property int $status 状态:0=下架,1=上架
  * @property-read mixed $creation_status_text
- * @property-read mixed $sex_text
  * @property-read mixed $vip_text
  * @property-read \app\admin\model\Classify|null $class
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $tags
@@ -54,7 +52,7 @@ class Novel extends Base
      */
     protected $primaryKey = 'id';
 
-    protected $appends = ['creation_status_text', 'sex_text', 'vip_text'];
+    protected $appends = ['creation_status_text', 'vip_text'];
 
 
     function class()
@@ -77,15 +75,6 @@ class Novel extends Base
         return $list[$value] ?? '';
     }
 
-    function getSexTextAttribute($value)
-    {
-        $value = $this->sex;
-        $list = [
-            1 => '男',
-            2 => '女',
-        ];
-        return $list[$value] ?? '';
-    }
 
 
 

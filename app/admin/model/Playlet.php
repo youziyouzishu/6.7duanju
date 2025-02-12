@@ -20,6 +20,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Playlet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Playlet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Playlet query()
+ * @property int $class_id 分类
  * @mixin \Eloquent
  */
 class Playlet extends Base
@@ -37,6 +38,28 @@ class Playlet extends Base
      * @var string
      */
     protected $primaryKey = 'id';
+
+    protected $appends = ['vip_text'];
+
+    function class()
+    {
+        return $this->belongsTo(Classify::class, 'class_id', 'id');
+    }
+
+    function tags()
+    {
+        return $this->belongsToMany(Classify::class, PlayletClass::class, 'playlet_id', 'class_id')->withTimestamps();
+    }
+
+    function getVipTextAttribute($value)
+    {
+        $value = $this->vip;
+        $list = [
+            0 => '否',
+            1 => '是',
+        ];
+        return $list[$value] ?? '';
+    }
     
     
     

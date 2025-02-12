@@ -13,7 +13,22 @@
 
             <div class="mainBox">
                 <div class="main-container mr-5">
-                    
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">分类</label>
+                        <div class="layui-input-block">
+                            <div id="class_id" name="class_id" value="" ></div>
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签</label>
+                        <div class="layui-input-block">
+                            <div id="tags" name="tags" value="" ></div>
+                        </div>
+                    </div>
+
+
                     <div class="layui-form-item">
                         <label class="layui-form-label">名称</label>
                         <div class="layui-input-block">
@@ -45,7 +60,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">介绍</label>
                         <div class="layui-input-block">
-                            <input type="text" name="content" value="" class="layui-input">
+                            <textarea name="content" class="layui-textarea"></textarea>
                         </div>
                     </div>
                     
@@ -128,6 +143,86 @@
                     clickClose: true,
                     radio: true,
                 })
+            });
+
+
+            // 字段 分类 class_id
+            layui.use(["jquery", "xmSelect", "popup"], function () {
+                let value = layui.$("#class_id").attr("value");
+                let initValue = value ? value.split(",") : [0];
+                layui.xmSelect.render({
+                    el: '#class_id',
+                    name: "class_id",
+                    initValue: initValue,
+                    filterable: true,
+                    clickClose: true,
+                    radio: true,
+                    remoteSearch: true,
+                    template({item, sels, name, value}) {
+                        return item.value + '<span style="position: absolute; right: 10px; color: #8799a3">' + item.name + '</span>';
+                    },
+                    prop: {
+                        name: 'name',
+                        value: 'value',
+                    },
+                    layVerify: "required",
+                    remoteMethod: function (val, cb, show, pageIndex) {
+                        layui.$.ajax({
+                            url: "/admin/classify/select?format=select",
+                            dataType: "json",
+                            data: {
+                                type:3,
+                                pid: 0,
+                                name: val,
+                            },
+                            success: function (res) {
+                                cb(res.data);
+                            }
+                        });
+                    },
+                    on: function (data) {
+                        //arr:  当前多选已选中的数据
+                        var arr = data.arr;
+                        if (arr.length > 0) {
+                            var selectedBoxId = arr[0].value;
+                            console.log(selectedBoxId)
+                            if (tagsSelect) {
+                                tagsSelect.update({
+                                    data:[],
+                                    remoteMethod: function (val, cb, show, pageIndex) {
+                                        layui.$.ajax({
+                                            url: '/admin/classify/select?format=select&pid=' + selectedBoxId,
+                                            dataType: "json",
+                                            data: {
+                                                name: val
+                                            },
+                                            success: function (res) {
+                                                cb(res.data);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    },
+                });
+
+                let tagsSelect = layui.xmSelect.render({
+                    el: '#tags',
+                    name: 'tags',
+                    //配置搜索
+                    filterable: true,
+                    //配置远程分页
+                    clickClose: false,
+                    radio: false,
+                    remoteSearch:true,
+                    layVerify: "required",
+                    max:5,
+                    prop: {
+                        name: 'name',
+                        value: 'value',
+                    },
+                });
             });
             
             // 字段 状态:0=下架,1=上架 status

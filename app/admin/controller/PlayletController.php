@@ -27,7 +27,22 @@ class PlayletController extends Crud
     {
         $this->model = new Playlet;
     }
-    
+
+
+    /**
+     * 查询
+     * @param Request $request
+     * @return Response
+     * @throws BusinessException
+     */
+    public function select(Request $request): Response
+    {
+        [$where, $format, $limit, $field, $order] = $this->selectInput($request);
+        $query = $this->doSelect($where, $field, $order)->with(['class','tags']);
+        return $this->doFormat($query, $format, $limit);
+    }
+
+
     /**
      * 浏览
      * @return Response
@@ -46,7 +61,14 @@ class PlayletController extends Crud
     public function insert(Request $request): Response
     {
         if ($request->method() === 'POST') {
-            return parent::insert($request);
+            $data = $this->insertInput($request);
+            $id = $this->doInsert($data);
+            $tags = $request->post('tags');
+            $tags = explode(',', $tags);
+            if (is_array($tags) && !empty($tags)) {
+                $this->model->find($id)->tags()->sync($tags);
+            }
+            return $this->json(0, 'ok', ['id' => $id]);
         }
         return view('playlet/insert');
     }
@@ -60,6 +82,12 @@ class PlayletController extends Crud
     public function update(Request $request): Response
     {
         if ($request->method() === 'POST') {
+            $id = $request->post('id');
+            $tags = $request->post('tags');
+            $tags = explode(',', $tags);
+            if (is_array($tags) && !empty($tags)) {
+                $this->model->find($id)->tags()->sync($tags);
+            }
             return parent::update($request);
         }
         return view('playlet/update');

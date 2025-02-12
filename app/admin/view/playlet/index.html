@@ -162,6 +162,12 @@
 						field: "id",
 						sort: true,
 					},{
+                        title: "分类",align: "center",
+                        field: "class_id",
+                        templet: function (d) {
+                            return d.class?d.class.name:'';
+                        }
+                    },{
 						title: "名称",align: "center",
 						field: "name",
 					},{
@@ -183,13 +189,19 @@
 							return util.escape(items.join(","));
 						}
 					},{
-						title: "喜欢人数",align: "center",
-						field: "like_num",
-					},{
+                        title: "标签",align: "center",
+                        field: "tags",
+                        templet: function (d) {
+                            return d.tags.map(tag => tag.name).join('|');
+                        }
+                    },{
 						title: "介绍",align: "center",
 						field: "content",
 						hide: true,
 					},{
+                        title: "喜欢人数",align: "center",
+                        field: "like_num",
+                    },{
 						title: "热度",align: "center",
 						field: "hot",
 					},{
@@ -339,7 +351,7 @@
                         shade: 0.1,
                         maxmin: true,
                         area: [common.isModile()?"100%":"90%", common.isModile()?"100%":"90%"],
-                        content: DETAIL_URL + "?" + "palylet_id" + "=" + value
+                        content: DETAIL_URL + "?" + "playlet_id" + "=" + value
                     });
                 }
 

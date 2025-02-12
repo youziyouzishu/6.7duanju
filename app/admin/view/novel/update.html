@@ -91,27 +91,7 @@
                             <textarea type="text" name="content" value="" class="layui-textarea"></textarea>
                         </div>
                     </div>
-                    
-                    <div class="layui-form-item">
-                        <label class="layui-form-label">性别</label>
-                        <div class="layui-input-block">
-                            <div name="sex" id="sex" value="" ></div>
-                        </div>
-                    </div>
-                    
-<!--                    <div class="layui-form-item">-->
-<!--                        <label class="layui-form-label">热度</label>-->
-<!--                        <div class="layui-input-block">-->
-<!--                            <input type="number" name="hot" value="" class="layui-input">-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    -->
-<!--                    <div class="layui-form-item">-->
-<!--                        <label class="layui-form-label">搜索数量</label>-->
-<!--                        <div class="layui-input-block">-->
-<!--                            <input type="number" name="search_num" value="" class="layui-input">-->
-<!--                        </div>-->
-<!--                    </div>-->
+
                     
                     <div class="layui-form-item">
                         <label class="layui-form-label">VIP</label>
@@ -278,6 +258,7 @@
                                                 url: "/admin/classify/select?format=select",
                                                 dataType: "json",
                                                 data: {
+                                                    type: ['in',[1,2]],
                                                     pid: 0,
                                                     name: val,
                                                 },
@@ -326,9 +307,6 @@
                                     });
                                 }
                             });
-
-
-
                         });
 
 
@@ -348,22 +326,6 @@
                                 clickClose: true,
                                 radio: true,
                                 layVerify: "required",
-                            })
-                        });
-                        
-                        // 字段 性别:1=男,2=女 sex
-                        layui.use(["jquery", "xmSelect"], function() {
-                            let value = layui.$("#sex").attr("value");
-                            let initValue = value ? value.split(",") : [];
-                            layui.xmSelect.render({
-                                el: "#sex",
-                                name: "sex",
-                                filterable: true,
-                                initValue: initValue,
-                                data: [{"value":"1","name":"男"},{"value":"2","name":"女"}],
-                                model: {"icon":"hidden","label":{"type":"text"}},
-                                clickClose: true,
-                                radio: true,
                             })
                         });
                         

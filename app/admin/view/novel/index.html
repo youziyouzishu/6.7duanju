@@ -29,13 +29,6 @@
                     </div>
                     
                     <div class="layui-form-item">
-                        <label class="layui-form-label">性别</label>
-                        <div class="layui-input-block">
-                            <div name="sex" id="sex" value="" ></div>
-                        </div>
-                    </div>
-                    
-                    <div class="layui-form-item">
                         <label class="layui-form-label">VIP</label>
                         <div class="layui-input-block">
                             <div name="vip" id="vip" value="" ></div>
@@ -132,23 +125,7 @@
                     radio: true,
                 })
             });
-            
-            // 字段 性别:1=男,2=女 sex
-            layui.use(["jquery", "xmSelect"], function() {
-                let value = layui.$("#sex").attr("value");
-                let initValue = value ? value.split(",") : [];
-                layui.xmSelect.render({
-                    el: "#sex",
-                    name: "sex",
-                    filterable: true,
-                    initValue: initValue,
-                    data: [{"value":"1","name":"男"},{"value":"2","name":"女"}],
-                    model: {"icon":"hidden","label":{"type":"text"}},
-                    clickClose: true,
-                    radio: true,
-                })
-            });
-            
+
             // 字段 VIP:0=否,1=是 vip
             layui.use(["jquery", "xmSelect"], function() {
                 let value = layui.$("#vip").attr("value");
@@ -250,18 +227,6 @@
 						title: "简介",align: "center",
 						field: "content",
 					},{
-						title: "性别",align: "center",
-						field: "sex",
-						templet: function (d) {
-							let field = "sex";
-							if (typeof d[field] == "undefined") return "";
-							let items = [];
-							layui.each((d[field] + "").split(","), function (k , v) {
-								items.push(apiResults[field][v] || v);
-							});
-							return util.escape(items.join(","));
-						}
-					},{
 						title: "热度",align: "center",
 						field: "hot",
 					},{
@@ -343,7 +308,6 @@
 				// 获取表格中下拉或树形组件数据
 				let apiResults = {};
 				apiResults["creation_status"] = ["连载中","已完结"];
-				apiResults["sex"] = {"1":"男","2":"女"};
 				apiResults["vip"] = ["否","是"];
 				apiResults["status"] = ["下架","上架"];
                 // 编辑或删除行事件
