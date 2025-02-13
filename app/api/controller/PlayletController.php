@@ -2,7 +2,13 @@
 
 namespace app\api\controller;
 
+use app\admin\model\NovelDetail;
 use app\admin\model\Playlet;
+use app\admin\model\PlayletDetail;
+use app\admin\model\UsersPlayletFollow;
+use app\admin\model\UsersPlayletLike;
+use app\admin\model\UsersPlayletLog;
+use app\admin\model\UsersReadLog;
 use app\api\basic\Base;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,7 +57,62 @@ class PlayletController extends Base
     {
         $playlet_id = $request->post('playlet_id');
         $row = Playlet::find($playlet_id);
+        $log = UsersPlayletLog::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->first();
+        if ($log){
+            $row->setAttribute('video', $log->playletDetail);
+        }else{
+            $log->setAttribute('video', $row->detail()->orderBy('index')->first());
+        }
         return $this->success('成功',$row);
     }
+
+    #同步短剧观看进度
+    function updatePlayletLog(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $rate = $request->post('rate');
+        $detail = PlayletDetail::find($detail_id);
+        UsersPlayletLog::updateOrCreate(['user_id' => $request->user_id, 'playlet_id' => $detail->playlet_id], ['playlet_detail_id' => $detail_id, 'playlet_id' => $detail->playlet_id, 'user_id' => $request->user_id, 'rate' => $rate]);
+        return $this->success('成功');
+    }
+
+    #点赞
+    function like(Request $request)
+    {
+        $playlet_id = $request->post('playlet_id');
+        $row = UsersPlayletLike::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->first();
+        if ($row) {
+            $row->playlet()->decrement('like_num');
+            $row->delete();
+            $result = false;
+        } else {
+            $row->playlet()->increment('like_num');
+            UsersPlayletLike::create(['user_id' => $request->user_id, 'playlet_id' => $playlet_id]);
+            $result = true;
+        }
+        return $this->success('成功', $result);
+    }
+
+    #追剧
+    function follow(Request $request)
+    {
+        $playlet_id = $request->post('playlet_id');
+        $row = UsersPlayletFollow::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->first();
+        if ($row) {
+            $row->delete();
+            $result = false;
+        } else {
+            UsersPlayletFollow::create(['user_id' => $request->user_id, 'playlet_id' => $playlet_id]);
+            $result = true;
+        }
+        return $this->success('成功', $result);
+    }
+
+
+
+
+
+
+
 
 }

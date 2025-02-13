@@ -5,7 +5,11 @@ namespace app\api\controller;
 use app\admin\model\RechargeOrders;
 use app\admin\model\Sms;
 use app\admin\model\User;
+use app\admin\model\UsersBookrack;
 use app\admin\model\UsersLayer;
+use app\admin\model\UsersPlayletLike;
+use app\admin\model\UsersPlayletLog;
+use app\admin\model\UsersReadLog;
 use app\api\basic\Base;
 use app\api\service\Pay;
 use Carbon\Carbon;
@@ -226,6 +230,44 @@ class UserController extends Base
             $base64 = $writer->write($qrCode)->getDataUri();
         }
         return $this->success('获取成功', ['base64' => $base64, 'invitecode' => $user->invitecode]);
+    }
+
+
+    #浏览历史
+    function history(Request $request)
+    {
+        $type = $request->post('type');#类型  1=书籍   2=短剧
+        if ($type == 1){
+            $list = UsersReadLog::where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+            foreach ($list as $item){
+                $bookrack = UsersBookrack::where('user_id', $request->user_id)->where('novel_id',$item->novel_id)->exists();
+                $item->Attribute('bookrack_status',$bookrack);
+            }
+        }else{
+            $list = UsersPlayletLog::where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+        }
+        return $this->success('获取成功', $list);
+    }
+
+    #删除历史记录
+    function deleteHistory(Request $request)
+    {
+        $ids = $request->post('ids');
+        $type = $request->post('type');#类型  1=书籍   2=短剧
+        if ($type == 1){
+            UsersReadLog::whereIn('id', $ids)->delete();
+        }else{
+            UsersPlayletLog::whereIn('id', $ids)->delete();
+        }
+        return $this->success('删除成功');
+    }
+
+
+    #短剧点赞记录
+    function getPlayletLikeList(Request $request)
+    {
+        $rows = UsersPlayletLike::with('playlet')->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+        return $this->success('获取成功', $rows);
     }
 
 

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Intervention\Image\Gd\Driver;
 
 use Intervention\Image\ImageManager;
+use plugin\admin\app\model\Option;
 use support\Request;
 
 class CommonController extends Base
@@ -52,6 +53,15 @@ class CommonController extends Base
 
         })->orderByDesc('weigh')->get();
         return $this->success('成功',$rows);
+    }
+
+    #获取配置
+    function getConfig()
+    {
+        $name = 'admin_config';
+        $config = Option::where('name', $name)->value('value');
+        $config = json_decode($config);
+        return $this->success('成功', $config);
     }
 
 }

@@ -44,7 +44,7 @@ class SmsController extends Base
             return $this->fail('发送频繁');
         }
         if ($event) {
-            $userinfo = User::where(['mobile'=>$mobile,'type'=>$request->user_type])->first();
+            $userinfo = User::where(['mobile'=>$mobile])->first();
             if ($event == 'register' && $userinfo) {
                 //已被注册
                 return $this->fail('已被注册');
