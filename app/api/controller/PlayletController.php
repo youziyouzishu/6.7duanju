@@ -2,13 +2,13 @@
 
 namespace app\api\controller;
 
-use app\admin\model\NovelDetail;
 use app\admin\model\Playlet;
 use app\admin\model\PlayletDetail;
+use app\admin\model\PlayletOrders;
+use app\admin\model\User;
 use app\admin\model\UsersPlayletFollow;
 use app\admin\model\UsersPlayletLike;
 use app\admin\model\UsersPlayletLog;
-use app\admin\model\UsersReadLog;
 use app\api\basic\Base;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,10 +59,24 @@ class PlayletController extends Base
         $playlet_id = $request->post('playlet_id');
         $row = Playlet::with(['tags'])->withCount(['detail'])->find($playlet_id);
         $log = UsersPlayletLog::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->first();
+        $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->where('type', 2)->exists();#整本
         if ($log){
+            $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $log->playletDetail->id)->where('type', 1)->exists();
             $row->setAttribute('video', $log->playletDetail);
+            if ($lock || $juji || $log->playletDetail->price == 0) {
+                $row->setAttribute('lock', false);
+            } else {
+                $row->setAttribute('lock', true);
+            }
         }else{
-            $row->setAttribute('video', $row->detail()->orderBy('index')->first());
+            $detail = $row->detail()->orderBy('index')->first();
+            $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id',$detail->id)->where('type', 1)->exists();
+            $row->setAttribute('video',$detail);
+            if ($lock || $juji || $detail->price == 0) {
+                $row->setAttribute('lock', false);
+            } else {
+                $row->setAttribute('lock', true);
+            }
         }
         return $this->success('成功',$row);
     }
@@ -73,11 +87,27 @@ class PlayletController extends Base
         $row = Playlet::find($playlet_id);
         $rows = $row->detail()->orderBy('index')->get();
         $follow_status = UsersPlayletFollow::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->exists();
+        $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->where('type', 2)->exists();#整本
         foreach ($rows as $detail){
+            $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $detail->id)->where('type', 1)->exists();
+            if ($lock || $juji || $detail->price == 0) {
+                $detail->setAttribute('lock', false);
+            } else {
+                $detail->setAttribute('lock', true);
+            }
             $detail->setAttribute('follow_status', $follow_status);
             $detail->setAttribute('like_status',UsersPlayletLike::where('user_id',$request->user_id)->where('playlet_detail_id',$detail->id)->exists());
         }
         return $this->success('成功',$rows);
+    }
+
+    #详情-推荐
+    function getRecommendOfPlaylet(Request $request)
+    {
+        $playlet_id = $request->post('playlet_id');
+        $row = Playlet::find($playlet_id);
+        $rows = Playlet::where('class_id', $row->class_id)->where('id', '<>', $playlet_id)->inRandomOrder()->take(4)->get();
+        return $this->success('成功', $rows);
     }
 
     function getSerieDetail(Request $request)
@@ -86,6 +116,13 @@ class PlayletController extends Base
         $row = PlayletDetail::find($detail_id);
         $row->increment('play_num');
         $row->playlet()->increment('play_num');
+        $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $row->playlet_id)->where('type', 2)->exists();#整本
+        $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $row->id)->where('type', 1)->exists();
+        if ($lock || $juji || $row->price == 0) {
+            $row->setAttribute('lock', false);
+        } else {
+            $row->setAttribute('lock', true);
+        }
         return $this->success('成功',$row);
     }
 
@@ -133,6 +170,93 @@ class PlayletController extends Base
             $result = true;
         }
         return $this->success('成功', $result);
+    }
+
+
+    #查询购买整本价格
+    function getPrice(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $juji = PlayletDetail::find($detail_id);
+        $user = User::find($request->user_id);
+        //查询出剩余未购买的章节
+        $totalPrice = PlayletDetail::where('novel_id', $juji->playlet_id)->whereNotIn('id', function ($query) use ($request, $juji) {
+            $query->select('playlet_detail_id')->from('wa_playlet_orders')->where('playlet_id', $juji->playlet_id)->where('user_id', $request->user_id)->where('type', 1);
+        })->sum('price');
+        return $this->success('成功', ['total_price' => $totalPrice, 'balance' => $user->money]);
+    }
+
+    // 购买章节
+    public function purchaseSerie(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $user = User::find($request->user_id);
+        $juji = PlayletDetail::find($detail_id);
+
+        if (!$user || !$juji) {
+            return $this->fail('用户或剧集不存在');
+        }
+
+
+        $already = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $detail_id)->where('type', 1)->exists();
+        if ($already) {
+            return $this->fail('已购买过此剧集');
+        }
+
+        if ($user->money < $juji->price) {
+            return $this->fail('金币不足');
+        }
+
+        User::score(-$juji->price, $request->user_id, '购买剧集', 'money');
+
+        // 记录购买记录
+        PlayletOrders::create([
+            'user_id' => $request->user_id,
+            'playlet_id' => $juji->playlet_id,
+            'playlet_detail_id' => $detail_id,
+            'amount' => $juji->price,
+            'type' => 1
+        ]);
+        return $this->success('购买成功');
+    }
+
+    // 购买整本小说
+    public function purchasePlaylet(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+
+        $user = User::find($request->user_id);
+        $juji = PlayletDetail::find($detail_id);
+
+        if (!$user || !$juji) {
+            return $this->fail('用户或剧集不存在');
+        }
+
+        $already = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $juji->playlet_id)->where('type', 2)->exists();
+        if ($already) {
+            return $this->fail('已购买过整个短剧');
+        }
+
+        $totalPrice = PlayletDetail::where('playlet_id', $juji->playlet_id)->whereNotIn('id', function ($query) use ($request, $juji) {
+            $query->select('playlet_detail_id')->from('wa_playlet_orders')->where('user_id', $request->user_id)->where('playlet_id', $juji->playlet_id)->where('type', 1);
+        })->sum('price');
+
+
+        if ($user->money < $totalPrice) {
+            return $this->fail('金币不足');
+        }
+
+        // 扣除用户金币
+        User::score(-$totalPrice, $request->user_id, '购买小说', 'money');
+
+        // 记录购买记录
+        PlayletOrders::create([
+            'user_id' => $request->user_id,
+            'playlet_id' => $juji->playlet_id,
+            'amount' => $totalPrice,
+            'type' => 2
+        ]);
+        return $this->success('购买成功');
     }
 
 

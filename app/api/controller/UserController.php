@@ -2,6 +2,9 @@
 
 namespace app\api\controller;
 
+use app\admin\model\Novel;
+use app\admin\model\NovelOrders;
+use app\admin\model\PlayletOrders;
 use app\admin\model\RechargeOrders;
 use app\admin\model\Sms;
 use app\admin\model\User;
@@ -267,6 +270,17 @@ class UserController extends Base
     function getPlayletLikeList(Request $request)
     {
         $rows = UsersPlayletLike::with('playlet')->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+        return $this->success('获取成功', $rows);
+    }
+
+    function getBuyList(Request $request)
+    {
+        $type = $request->post('type');#类型  1=书籍   2=短剧
+        if ($type == 1){
+            $rows = NovelOrders::with(['novel'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('novel_id')->paginate()->items();
+        }else{
+            $rows = PlayletOrders::with(['playlet'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('playlet_id')->paginate()->items();
+        }
         return $this->success('获取成功', $rows);
     }
 

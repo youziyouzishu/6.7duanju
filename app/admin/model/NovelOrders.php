@@ -19,6 +19,9 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NovelOrders query()
  * @property string $amount 金额
  * @property int $type 购买类型:1=单章,2=整本
+ * @property-read \app\admin\model\Novel|null $novel
+ * @property-read \app\admin\model\NovelDetail|null $novelDetail
+ * @property-read \app\admin\model\User|null $user
  * @mixin \Eloquent
  */
 class NovelOrders extends Base
@@ -45,6 +48,20 @@ class NovelOrders extends Base
         'type'
     ];
 
+    function novel()
+    {
+        return $this->belongsTo(Novel::class, 'novel_id', 'id');
+    }
+
+    function novelDetail()
+    {
+        return $this->belongsTo(NovelDetail::class, 'novel_detail_id', 'id');
+    }
+
+    function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 
 
 
