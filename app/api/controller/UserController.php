@@ -238,10 +238,10 @@ class UserController extends Base
     {
         $type = $request->post('type');#类型  1=书籍   2=短剧
         if ($type == 1){
-            $list = UsersReadLog::where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+            $list = UsersReadLog::with(['novel'])->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
             foreach ($list as $item){
                 $bookrack = UsersBookrack::where('user_id', $request->user_id)->where('novel_id',$item->novel_id)->exists();
-                $item->Attribute('bookrack_status',$bookrack);
+                $item->setAttribute('bookrack_status',$bookrack);
             }
         }else{
             $list = UsersPlayletLog::where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();

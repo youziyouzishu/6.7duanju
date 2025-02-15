@@ -26,9 +26,10 @@ class NovelController extends Base
         $keyword = $request->post('keyword');#关键字
         $text_num = $request->post('text_num');#文字数:0=不限,1=10万字以内,2=30万字以内,3=50万字以内,4=30万字以上,5=50万字以上
         $creation_status = $request->post('creation_status');#作品状态:0=不限,1=完结,2=半年内完结,3=连载中,4=3日内更新,5=7日内更新,6=1月内更新
+        $sort = $request->post('sort');#排序:1=综合 2=新书 3=高分 4=字数
         $tag_count = !empty($tag_ids) ? count($tag_ids) : 0;
         if ($tag_count >= 4) {
-            return $this->fail('标签不能超过4个');
+            return $this->fail('标签不能超过3个');
         }
         $rows = Novel::
         where('status', 1)
@@ -37,6 +38,7 @@ class NovelController extends Base
                     $query->whereIn('wa_classify.id', $tag_ids);
                 });
             })
+            ->with(['tags'])
             ->when(!empty($creation_status), function (Builder $builder) use ($creation_status) {
                 if ($creation_status == 1) {
                     $builder->where('creation_status', 1);
@@ -77,16 +79,13 @@ class NovelController extends Base
             ->when(!empty($keyword), function (Builder $query) use ($keyword) {
                 $query->where('name', 'like', '%' . $keyword . '%')->orWhere('name', 'like', '%' . $keyword . '%');
             })
-
             ->when(!empty($class_id), function (Builder $query) use ($class_id) {
                 $query->where('class_id', $class_id);
             })
-
             ->when(!empty($sex), function (Builder $query) use ($sex) {
-                $class_ids = Classify::where('type',$sex)->where('pid',0)->pluck('id')->toArray();
+                $class_ids = Classify::where('type', $sex)->where('pid', 0)->pluck('id')->toArray();
                 $query->whereIn('class_id', $class_ids);
             })
-
             ->when(!empty($type), function (Builder $query) use ($type) {
                 if ($type == 1) {
                     $query->orderByDesc('read_num');
@@ -122,10 +121,10 @@ class NovelController extends Base
         $novel = Novel::find($novel_id);
         $novel->setAttribute('bookrack_status', UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $novel_id)->exists());
         $readlog = UsersReadLog::where('user_id', $request->user_id)->where('novel_id', $novel_id)->first();
-        if ($readlog){
+        if ($readlog) {
             $novel->setAttribute('chapter_index', $readlog->novelDetail->index);
             $novel->setAttribute('chapter_name', $readlog->novelDetail->name);
-        }else{
+        } else {
             $novel->setAttribute('chapter_index', 0);
             $novel->setAttribute('chapter_name', '');
         }
@@ -135,17 +134,17 @@ class NovelController extends Base
     #章节列表
     function getChapterList(Request $request)
     {
-        $order = $request->post('order','asc');
+        $order = $request->post('order', 'asc');
         $novel_id = $request->post('novel_id');
-        $rows = NovelDetail::with(['readLog'=>function ($builder)use($request) {
+        $rows = NovelDetail::with(['readLog' => function ($builder) use ($request) {
             $builder->where('user_id', $request->user_id);
-        }])->where('novel_id', $novel_id)->orderBy('index',$order)->paginate()->items();
+        }])->where('novel_id', $novel_id)->orderBy('index', $order)->paginate()->items();
         $lock = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $novel_id)->where('type', 2)->exists();#整本
         foreach ($rows as $row) {
-            $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id',$row->id)->where('type', 1)->exists();
-            if ($lock || $chapter || $row->price == 0){
+            $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id', $row->id)->where('type', 1)->exists();
+            if ($lock || $chapter || $row->price == 0) {
                 $row->setAttribute('lock', false);
-            }else{
+            } else {
                 $row->setAttribute('lock', true);
             }
         }
@@ -157,14 +156,14 @@ class NovelController extends Base
     {
         $detail_id = $request->post('detail_id');
         #获取小说详情
-        $row = NovelDetail::with(['readLog'=>function ($builder)use($request) {
-                $builder->where('user_id', $request->user_id);
+        $row = NovelDetail::with(['readLog' => function ($builder) use ($request) {
+            $builder->where('user_id', $request->user_id);
         }])->find($detail_id);
         $lock = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $row->novel_id)->where('type', 2)->exists();#整本
-        $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id',$row->id)->where('type', 1)->exists();
-        if ($lock || $chapter || $row->price == 0){
+        $chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id', $row->id)->where('type', 1)->exists();
+        if ($lock || $chapter || $row->price == 0) {
             $row->setAttribute('lock', false);
-        }else{
+        } else {
             $row->setAttribute('lock', true);
         }
         return $this->success('成功', $row);
@@ -211,10 +210,10 @@ class NovelController extends Base
         $chapter = NovelDetail::find($detail_id);
         $user = User::find($request->user_id);
         //查询出剩余未购买的章节
-        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request,$chapter) {
+        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request, $chapter) {
             $query->select('novel_detail_id')->from('wa_novel_orders')->where('novel_id', $chapter->novel_id)->where('user_id', $request->user_id)->where('type', 1);
         })->sum('price');
-        return $this->success('成功', ['total_price'=>$totalPrice,'balance'=>$user->money]);
+        return $this->success('成功', ['total_price' => $totalPrice, 'balance' => $user->money]);
     }
 
     // 购买章节
@@ -242,10 +241,10 @@ class NovelController extends Base
 
         // 记录购买记录
         NovelOrders::create([
-            'user_id'=>$request->user_id,
+            'user_id' => $request->user_id,
             'novel_id' => $chapter->novel_id,
-            'novel_detail_id'=>$detail_id,
-            'amount'=>$chapter->price,
+            'novel_detail_id' => $detail_id,
+            'amount' => $chapter->price,
             'type' => 1
         ]);
         return $this->success('购买成功');
@@ -268,7 +267,7 @@ class NovelController extends Base
             return $this->fail('已购买过整本小说');
         }
         //查询出剩余未购买的章节
-        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request,$chapter) {
+        $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request, $chapter) {
             $query->select('novel_detail_id')->from('wa_novel_orders')->where('user_id', $request->user_id)->where('novel_id', $chapter->novel_id)->where('type', 1);
         })->sum('price');
 
@@ -282,9 +281,9 @@ class NovelController extends Base
 
         // 记录购买记录
         NovelOrders::create([
-            'user_id'=>$request->user_id,
-            'novel_id' =>$chapter->novel_id,
-            'amount'=>$totalPrice,
+            'user_id' => $request->user_id,
+            'novel_id' => $chapter->novel_id,
+            'amount' => $totalPrice,
             'type' => 2
         ]);
         return $this->success('购买成功');

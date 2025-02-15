@@ -17,6 +17,7 @@ use support\Request;
 class PlayletController extends Base
 {
 
+
     #获取列表
     function getPlayletList(Request $request)
     {
@@ -56,13 +57,35 @@ class PlayletController extends Base
     function getPlayletDetail(Request $request)
     {
         $playlet_id = $request->post('playlet_id');
-        $row = Playlet::find($playlet_id);
+        $row = Playlet::with(['tags'])->withCount(['detail'])->find($playlet_id);
         $log = UsersPlayletLog::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->first();
         if ($log){
             $row->setAttribute('video', $log->playletDetail);
         }else{
-            $log->setAttribute('video', $row->detail()->orderBy('index')->first());
+            $row->setAttribute('video', $row->detail()->orderBy('index')->first());
         }
+        return $this->success('成功',$row);
+    }
+
+    function getSerieList(Request $request)
+    {
+        $playlet_id = $request->post('playlet_id');
+        $row = Playlet::find($playlet_id);
+        $rows = $row->detail()->orderBy('index')->get();
+        $follow_status = UsersPlayletFollow::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->exists();
+        foreach ($rows as $detail){
+            $detail->setAttribute('follow_status', $follow_status);
+            $detail->setAttribute('like_status',UsersPlayletLike::where('user_id',$request->user_id)->where('playlet_detail_id',$detail->id)->exists());
+        }
+        return $this->success('成功',$rows);
+    }
+
+    function getSerieDetail(Request $request)
+    {
+        $detail_id = $request->post('detail_id');
+        $row = PlayletDetail::find($detail_id);
+        $row->increment('play_num');
+        $row->playlet()->increment('play_num');
         return $this->success('成功',$row);
     }
 
@@ -79,15 +102,19 @@ class PlayletController extends Base
     #点赞
     function like(Request $request)
     {
-        $playlet_id = $request->post('playlet_id');
-        $row = UsersPlayletLike::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->first();
+        $detail_id = $request->post('detail_id');
+        $detail = PlayletDetail::find($detail_id);
+        $row = UsersPlayletLike::where('user_id', $request->user_id)->where('playlet_detail_id', $detail->id)->first();
         if ($row) {
             $row->playlet()->decrement('like_num');
+            $row->playletDetail()->increment('like_num');
             $row->delete();
             $result = false;
         } else {
+
+            $row = UsersPlayletLike::create(['user_id' => $request->user_id, 'playlet_detail_id' => $detail->id,'playlet_id' => $detail->playlet_id]);
             $row->playlet()->increment('like_num');
-            UsersPlayletLike::create(['user_id' => $request->user_id, 'playlet_id' => $playlet_id]);
+            $row->playletDetail()->increment('like_num');
             $result = true;
         }
         return $this->success('成功', $result);

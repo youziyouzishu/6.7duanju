@@ -18,6 +18,8 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersPlayletLike query()
  * @property-read \app\admin\model\Playlet|null $playlet
  * @property-read \app\admin\model\User|null $user
+ * @property int $playlet_detail_id 剧集
+ * @property-read \app\admin\model\PlayletDetail|null $playletDetail
  * @mixin \Eloquent
  */
 class UsersPlayletLike extends Base
@@ -49,6 +51,11 @@ class UsersPlayletLike extends Base
     public function playlet()
     {
         return $this->belongsTo(Playlet::class, 'playlet_id', 'id');
+    }
+
+    function playletDetail()
+    {
+        return $this->belongsTo(PlayletDetail::class, 'playlet_detail_id', 'id');
     }
 
 

@@ -7,9 +7,6 @@ use app\admin\model\Classify;
 use app\admin\model\Vip;
 use app\api\basic\Base;
 use Illuminate\Database\Eloquent\Builder;
-use Intervention\Image\Gd\Driver;
-
-use Intervention\Image\ImageManager;
 use plugin\admin\app\model\Option;
 use support\Request;
 

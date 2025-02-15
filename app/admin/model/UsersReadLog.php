@@ -21,6 +21,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersReadLog query()
  * @property-read \app\admin\model\Novel|null $novel
  * @property-read \app\admin\model\NovelDetail|null $novelDetail
+ * @property-read \app\admin\model\User|null $user
  * @mixin \Eloquent
  */
 class UsersReadLog extends Base
@@ -54,6 +55,11 @@ class UsersReadLog extends Base
     function novel()
     {
         return $this->belongsTo(Novel::class, 'novel_id', 'id');
+    }
+
+    function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
 

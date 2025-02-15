@@ -8,13 +8,19 @@ use app\api\basic\Base;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use support\Request;
+use Tinywan\Validate\Helper\Str;
 
 class IndexController extends Base
 {
     protected $noNeedLogin = ['*'];
     function index(Request $request)
     {
-        $userinfo = User::where(['mobile'=>'11111','type'=>22222])->first();
+        dump($request->post());
+        $request->setParams('post',['aaa'=>11]);
+        dump($request->post());
+
+
+        return $this->success();
     }
 
 }

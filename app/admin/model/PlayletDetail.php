@@ -22,6 +22,8 @@ use plugin\admin\app\model\Base;
  * @property string $video 视频
  * @property int $index 剧集索引
  * @property-read \app\admin\model\Playlet|null $playlet
+ * @property int $like_num 点赞人数
+ * @property int $play_num 播放次数
  * @mixin \Eloquent
  */
 class PlayletDetail extends Base
