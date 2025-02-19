@@ -41,6 +41,7 @@ class UsersPlayletLike extends Base
     protected $fillable = [
         'user_id',
         'playlet_id',
+        'playlet_detail_id',
     ];
 
     public function user()

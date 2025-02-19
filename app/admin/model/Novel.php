@@ -70,7 +70,7 @@ class Novel extends Base
     {
         return $this->belongsToMany(Classify::class, NovelClass::class, 'novel_id', 'class_id')->withTimestamps();
     }
-    
+
     function getCreationStatusTextAttribute($value)
     {
         $value = $this->creation_status;

@@ -58,6 +58,7 @@ class PlayletController extends Base
     {
         $playlet_id = $request->post('playlet_id');
         $row = Playlet::with(['tags'])->withCount(['detail'])->find($playlet_id);
+        $follow_status = UsersPlayletFollow::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->exists();
         $log = UsersPlayletLog::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->first();
         $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->where('type', 2)->exists();#整本
         if ($log){
@@ -78,6 +79,7 @@ class PlayletController extends Base
                 $row->setAttribute('lock', true);
             }
         }
+        $row->setAttribute('follow_status', $follow_status);
         return $this->success('成功',$row);
     }
 
@@ -132,7 +134,7 @@ class PlayletController extends Base
         $detail_id = $request->post('detail_id');
         $rate = $request->post('rate');
         $detail = PlayletDetail::find($detail_id);
-        UsersPlayletLog::updateOrCreate(['user_id' => $request->user_id, 'playlet_id' => $detail->playlet_id], ['playlet_detail_id' => $detail_id, 'playlet_id' => $detail->playlet_id, 'user_id' => $request->user_id, 'rate' => $rate]);
+        UsersPlayletLog::updateOrCreate(['user_id' => $request->user_id, 'playlet_id' => $detail->playlet_id], ['playlet_detail_id' => $detail_id, 'playlet_id' => $detail->playlet_id, 'user_id' => $request->user_id]);
         return $this->success('成功');
     }
 
@@ -180,7 +182,7 @@ class PlayletController extends Base
         $juji = PlayletDetail::find($detail_id);
         $user = User::find($request->user_id);
         //查询出剩余未购买的章节
-        $totalPrice = PlayletDetail::where('novel_id', $juji->playlet_id)->whereNotIn('id', function ($query) use ($request, $juji) {
+        $totalPrice = PlayletDetail::where('playlet_id', $juji->playlet_id)->whereNotIn('id', function ($query) use ($request, $juji) {
             $query->select('playlet_detail_id')->from('wa_playlet_orders')->where('playlet_id', $juji->playlet_id)->where('user_id', $request->user_id)->where('type', 1);
         })->sum('price');
         return $this->success('成功', ['total_price' => $totalPrice, 'balance' => $user->money]);

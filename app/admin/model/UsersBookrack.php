@@ -16,6 +16,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersBookrack newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersBookrack newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersBookrack query()
+ * @property-read \app\admin\model\Novel|null $novel
  * @mixin \Eloquent
  */
 class UsersBookrack extends Base
@@ -41,6 +42,10 @@ class UsersBookrack extends Base
         'updated_at',
     ];
 
+    function novel()
+    {
+        return $this->belongsTo(Novel::class, 'novel_id', 'id');
+    }
 
 
 

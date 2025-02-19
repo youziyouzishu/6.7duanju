@@ -36,7 +36,7 @@ class Pay
                     ]);
                 }else{
                     if (empty($openid)){
-                        throw new \Exception('请先绑定微信');
+                        throw new \Exception('请先绑定微信小程序');
                     }
                     $result = \Yansongda\Pay\Pay::wechat()->mini([
                         'out_trade_no' => $order_no,

@@ -193,6 +193,21 @@ class NovelController extends Base
         return $this->success('成功', $result);
     }
 
+    #获取书架列表
+    function getBookrackList(Request $request)
+    {
+        $rows = UsersBookrack::with(['novel'])->where('user_id', $request->user_id)->orderByDesc('id')->paginate()->items();
+        return $this->success('成功', $rows);
+    }
+
+    #删除书架
+    function deleteBookrack(Request $request)
+    {
+        $bookrack_id = $request->post('bookrack_id');
+        UsersBookrack::find($bookrack_id)->delete();
+        return $this->success('成功');
+    }
+
     #同步小说阅读进度
     function updateReadLog(Request $request)
     {

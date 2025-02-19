@@ -40,6 +40,7 @@ use support\Db;
  * @property int $parent_id 上级
  * @property \Illuminate\Support\Carbon|null $vip_expire 会员过期时间
  * @property-read User|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $class
  * @mixin \Eloquent
  */
 class User extends Base
@@ -120,6 +121,12 @@ class User extends Base
     function parent()
     {
         return $this->belongsTo(User::class, 'parent_id', 'id');
+    }
+
+    function class()
+    {
+        return $this->belongsToMany(Classify::class,UsersClass::class,'user_id','class_id')
+            ->withTimestamps();
     }
 
 }

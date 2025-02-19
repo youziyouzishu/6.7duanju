@@ -14,6 +14,9 @@ return  [
             'prefix'      => '',
             'strict'      => true,
             'engine'      => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci, time_zone = "+08:00"',
+            ]) : [],
         ],
     ],
 ];

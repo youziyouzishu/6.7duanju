@@ -2,6 +2,7 @@
 
 namespace app\api\controller;
 
+use app\admin\model\Classify;
 use app\admin\model\Novel;
 use app\admin\model\NovelOrders;
 use app\admin\model\PlayletOrders;
@@ -9,6 +10,7 @@ use app\admin\model\RechargeOrders;
 use app\admin\model\Sms;
 use app\admin\model\User;
 use app\admin\model\UsersBookrack;
+use app\admin\model\UsersClass;
 use app\admin\model\UsersLayer;
 use app\admin\model\UsersPlayletLike;
 use app\admin\model\UsersPlayletLog;
@@ -25,6 +27,7 @@ use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use plugin\admin\app\common\Util;
 use plugin\admin\app\model\Option;
+use support\Db;
 use support\Request;
 use support\Response;
 use Tinywan\Jwt\JwtToken;
@@ -204,6 +207,7 @@ class UserController extends Base
         return $this->success('成功');
     }
 
+    #获取海报
     function getPoster(Request $request)
     {
         $user = User::find($request->user_id);
@@ -269,7 +273,19 @@ class UserController extends Base
     #短剧点赞记录
     function getPlayletLikeList(Request $request)
     {
-        $rows = UsersPlayletLike::with('playlet')->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+        // 子查询：获取每个 playlet_id 对应的最大 id
+        $subQuery = UsersPlayletLike::select('playlet_id', DB::raw('MAX(id) as max_id'))
+            ->where('user_id', $request->user_id)
+            ->groupBy('playlet_id');
+
+        $rows = UsersPlayletLike::with('playlet')
+            ->whereIn('id', function ($query) use ($subQuery) {
+                $query->fromSub($subQuery, 'sub')
+                    ->select('max_id');
+            })
+            ->orderBy('id', 'desc')
+            ->paginate()
+            ->items();
         return $this->success('获取成功', $rows);
     }
 
@@ -282,6 +298,44 @@ class UserController extends Base
             $rows = PlayletOrders::with(['playlet'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('playlet_id')->paginate()->items();
         }
         return $this->success('获取成功', $rows);
+    }
+
+    #获取用户内容偏好
+    function getUserClass(Request $request)
+    {
+        $data = [];
+        $user_class = UsersClass::where('user_id',$request->user_id)->pluck('class_id')->toArray();
+        $data['type_1'] = Classify::where('pid','<>',0)->where('type',1)->get()->each(function ($item)use($user_class){
+            if (in_array($item->id,$user_class)){
+                $item->setAttribute('exists',true);
+            }else{
+                $item->setAttribute('exists',false);
+            }
+        });
+        $data['type_2'] = Classify::where('pid','<>',0)->where('type',2)->get()->each(function ($item)use($user_class){
+            if (in_array($item->id,$user_class)){
+                $item->setAttribute('exists',true);
+            }else{
+                $item->setAttribute('exists',false);
+            }
+        });
+        $data['type_3'] = Classify::where('pid','<>',0)->where('type',3)->get()->each(function ($item)use($user_class){
+            if (in_array($item->id,$user_class)){
+                $item->setAttribute('exists',true);
+            }else{
+                $item->setAttribute('exists',false);
+            }
+        });
+        return $this->success('获取成功', $data);
+    }
+
+    #更新用户内容偏好
+    function updateUserClass(Request $request)
+    {
+        $class_ids = $request->post('class_ids');# array [1,2,3]
+        $user = User::find($request->user_id);
+        $user->class()->sync($class_ids);
+        return $this->success('更新成功');
     }
 
 

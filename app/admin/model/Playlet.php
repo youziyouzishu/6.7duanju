@@ -46,7 +46,7 @@ class Playlet extends Base
      */
     protected $primaryKey = 'id';
 
-    protected $appends = ['vip_text'];
+    protected $appends = ['vip_text','creation_status_text'];
 
     function class()
     {
