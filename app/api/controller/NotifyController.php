@@ -113,19 +113,19 @@ class NotifyController extends Base
                     $order->pay_time = date('Y-m-d H:i:s');
                     $order->save();
                     //增加用户会员时间
-                    if (empty($order->user->vip_expire)){
+                    if (empty($order->user->vip_expire)) {
                         $order->user->vip_expire = $order->vip_id == 1 ? Carbon::now()->addMonths(1)->format('Y-m-d H:i:s') : ($order->vip_id == 2 ? Carbon::now()->addMonths(3)->format('Y-m-d H:i:s') : Carbon::now()->addYears()->format('Y-m-d H:i:s'));
-                    }else{
-                        if ($order->user->vip_expire->timestamp >= Carbon::now()->timestamp){
+                    } else {
+                        if ($order->user->vip_expire->timestamp >= Carbon::now()->timestamp) {
                             $order->user->vip_expire = $order->vip_id == 1 ? Carbon::parse($order->user->vip_expire)->addMonths(1)->format('Y-m-d H:i:s') : ($order->vip_id == 2 ? Carbon::parse($order->user->vip_expire)->addMonths(3)->format('Y-m-d H:i:s') : Carbon::parse($order->user->vip_expire)->addYears()->format('Y-m-d H:i:s'));
-                        }else{
+                        } else {
                             $order->user->vip_expire = $order->vip_id == 1 ? Carbon::now()->addMonths(1)->format('Y-m-d H:i:s') : ($order->vip_id == 2 ? Carbon::now()->addMonths(3)->format('Y-m-d H:i:s') : Carbon::now()->addYears()->format('Y-m-d H:i:s'));
                         }
                     }
                     $order->user->save();
                     //给上级反佣金
-                    if ($order->user->parent){
-                        User::score(round($order->pay_amount * 0.2),$order->user->parent_id,'开通会员返佣','money');
+                    if ($order->user->parent) {
+                        User::score(round($order->pay_amount * 0.2), $order->user->parent_id, '开通会员返佣', 'money');
                     }
                     break;
                 case 'recharge':
@@ -137,10 +137,10 @@ class NotifyController extends Base
                     $order->pay_time = date('Y-m-d H:i:s');
                     $order->save();
                     //增加用户余额
-                    User::score($order->pay_amount,$order->user_id,$order->pay_type_text.'充值','money');
+                    User::score($order->pay_amount, $order->user_id, $order->pay_type_text . '充值', 'money');
                     //给上级反佣金
-                    if ($order->user->parent){
-                        User::score(round($order->pay_amount * 0.2),$order->user->parent_id,'充值金币返佣','money');
+                    if ($order->user->parent) {
+                        User::score(round($order->pay_amount * 0.2), $order->user->parent_id, '充值金币返佣', 'money');
                     }
                     break;
                 default:

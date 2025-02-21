@@ -349,6 +349,7 @@ class UserController extends Base
         $class_name = $request->post('class_name');
         $content = $request->post('content');
         $images = $request->post('images');
+
         Advice::create([
             'class_name' => $class_name,
             'content' => $content,
@@ -358,7 +359,7 @@ class UserController extends Base
         return $this->success('添加成功');
     }
 
-    function getTeam(Request $request)
+    function getTeamList(Request $request)
     {
         $rows = User::where(['parent_id' => $request->user_id])->paginate()->items();
         return $this->success('获取成功', $rows);

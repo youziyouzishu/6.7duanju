@@ -52,6 +52,7 @@ class ConfigController extends Crud
         $data['invite_rule'] = $post['invite_rule'] ?? '';
         $data['vip_rule'] = $post['vip_rule'] ?? '';
         $data['invite_explain'] = $post['invite_explain'] ?? '';
+        $data['poster_image'] = $post['poster_image'] ?? '';
         $name = 'admin_config';
         Option::where('name', $name)->update([
             'value' => json_encode($data)

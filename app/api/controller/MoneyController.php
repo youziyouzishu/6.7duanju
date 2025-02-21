@@ -92,6 +92,7 @@ class MoneyController extends Base
         return $this->success('提交成功');
     }
 
+    #获取提现记录
     function getWithdrawList(Request $request)
     {
         $rows = UsersWithdraw::where('user_id', $request->user_id)
