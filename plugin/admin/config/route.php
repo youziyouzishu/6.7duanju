@@ -14,6 +14,7 @@
 
 use plugin\admin\app\controller\AccountController;
 use plugin\admin\app\controller\DictController;
+use support\Response;
 use Webman\Route;
 use support\Request;
 
@@ -21,6 +22,6 @@ Route::any('/app/admin/account/captcha/{type}', [AccountController::class, 'capt
 
 Route::any('/app/admin/dict/get/{name}', [DictController::class, 'get']);
 
-Route::fallback(function (Request $request) {
-    return response($request->uri() . ' not found' , 404);
+Route::fallback(function () {
+    return new Response(404, [], file_get_contents(base_path('plugin' . DIRECTORY_SEPARATOR. 'admin' . DIRECTORY_SEPARATOR . 'public') . '/demos/error/404.html'));
 }, 'admin');

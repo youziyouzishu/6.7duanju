@@ -125,7 +125,7 @@ class NovelController extends Base
             $novel->setAttribute('chapter_index', $readlog->novelDetail->index);
             $novel->setAttribute('chapter_name', $readlog->novelDetail->name);
         } else {
-            $novel->setAttribute('chapter_index', 0);
+            $novel->setAttribute('chapter_index', '');
             $novel->setAttribute('chapter_name', '');
         }
         return $this->success('成功', $novel);

@@ -23,22 +23,44 @@ class PlayletController extends Base
     {
         $type = $request->post('type');#类型:1=本周热门 2=本周排行 3=最近热播
         $tag_ids = $request->post('tag_ids');#标签ids [1,2,3]
-        $rows = Playlet::where('status',1)
+        $serie_num = $request->post('serie_num');#0=不限 1=1-30集 ，2=30-60 ，3=60-90，4=90-120，5=120以上
+        $tag_count = !empty($tag_ids) ? count($tag_ids) : 0;
+        if ($tag_count >= 4) {
+            return $this->fail('标签不能超过3个');
+        }
+        $rows = Playlet::where('status', 1)
             ->withCount('detail')
-            ->when(!empty($type),function (Builder $builder)use($type){
-                if ($type == 1){
+            ->when(!empty($serie_num),function (Builder $query)use($serie_num){
+                if ($serie_num == 1){
+                    $query->has('detail','>=',1)->has('detail', '<=', 30);
+                }
+                if ($serie_num == 2){
+                    $query->has('detail','>=',30)->has('detail', '<=', 60);
+                }
+                if ($serie_num == 3){
+                    $query->has('detail','>=',60)->has('detail', '<=', 90);
+                }
+                if ($serie_num == 4){
+                    $query->has('detail','>=',90)->has('detail', '<=', 120);
+                }
+                if ($serie_num == 5){
+                    $query->has('detail','>=',120);
+                }
+            })
+            ->when(!empty($type), function (Builder $builder) use ($type) {
+                if ($type == 1) {
                     // 获取本周的开始和结束日期
                     $startOfWeek = Carbon::now()->startOfWeek();
                     $endOfWeek = Carbon::now()->endOfWeek();
-                        $builder->whereBetween('created_at', [$startOfWeek, $endOfWeek])->orderByDesc('like_num');
+                    $builder->whereBetween('created_at', [$startOfWeek, $endOfWeek])->orderByDesc('like_num');
                 }
-                if ($type == 2){
+                if ($type == 2) {
                     // 获取本周的开始和结束日期
                     $startOfWeek = Carbon::now()->startOfWeek();
                     $endOfWeek = Carbon::now()->endOfWeek();
                     $builder->whereBetween('created_at', [$startOfWeek, $endOfWeek])->orderByDesc('hot');
                 }
-                if ($type == 3){
+                if ($type == 3) {
                     $builder->orderByDesc('id');
                 }
             })
@@ -49,7 +71,7 @@ class PlayletController extends Base
             })
             ->paginate()
             ->items();
-        return $this->success('成功',$rows);
+        return $this->success('成功', $rows);
     }
 
 
@@ -58,10 +80,10 @@ class PlayletController extends Base
     {
         $playlet_id = $request->post('playlet_id');
         $row = Playlet::with(['tags'])->withCount(['detail'])->find($playlet_id);
-        $follow_status = UsersPlayletFollow::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->exists();
-        $log = UsersPlayletLog::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->first();
+        $follow_status = UsersPlayletFollow::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->exists();
+        $log = UsersPlayletLog::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->first();
         $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->where('type', 2)->exists();#整本
-        if ($log){
+        if ($log) {
             $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $log->playletDetail->id)->where('type', 1)->exists();
             $row->setAttribute('video', $log->playletDetail);
             if ($lock || $juji || $log->playletDetail->price == 0) {
@@ -69,10 +91,10 @@ class PlayletController extends Base
             } else {
                 $row->setAttribute('lock', true);
             }
-        }else{
+        } else {
             $detail = $row->detail()->orderBy('index')->first();
-            $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id',$detail->id)->where('type', 1)->exists();
-            $row->setAttribute('video',$detail);
+            $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $detail->id)->where('type', 1)->exists();
+            $row->setAttribute('video', $detail);
             if ($lock || $juji || $detail->price == 0) {
                 $row->setAttribute('lock', false);
             } else {
@@ -80,7 +102,7 @@ class PlayletController extends Base
             }
         }
         $row->setAttribute('follow_status', $follow_status);
-        return $this->success('成功',$row);
+        return $this->success('成功', $row);
     }
 
     function getSerieList(Request $request)
@@ -88,9 +110,9 @@ class PlayletController extends Base
         $playlet_id = $request->post('playlet_id');
         $row = Playlet::find($playlet_id);
         $rows = $row->detail()->orderBy('index')->get();
-        $follow_status = UsersPlayletFollow::where('user_id',$request->user_id)->where('playlet_id',$playlet_id)->exists();
+        $follow_status = UsersPlayletFollow::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->exists();
         $lock = PlayletOrders::where('user_id', $request->user_id)->where('playlet_id', $playlet_id)->where('type', 2)->exists();#整本
-        foreach ($rows as $detail){
+        foreach ($rows as $detail) {
             $juji = PlayletOrders::where('user_id', $request->user_id)->where('playlet_detail_id', $detail->id)->where('type', 1)->exists();
             if ($lock || $juji || $detail->price == 0) {
                 $detail->setAttribute('lock', false);
@@ -98,9 +120,9 @@ class PlayletController extends Base
                 $detail->setAttribute('lock', true);
             }
             $detail->setAttribute('follow_status', $follow_status);
-            $detail->setAttribute('like_status',UsersPlayletLike::where('user_id',$request->user_id)->where('playlet_detail_id',$detail->id)->exists());
+            $detail->setAttribute('like_status', UsersPlayletLike::where('user_id', $request->user_id)->where('playlet_detail_id', $detail->id)->exists());
         }
-        return $this->success('成功',$rows);
+        return $this->success('成功', $rows);
     }
 
     #详情-推荐
@@ -125,7 +147,7 @@ class PlayletController extends Base
         } else {
             $row->setAttribute('lock', true);
         }
-        return $this->success('成功',$row);
+        return $this->success('成功', $row);
     }
 
     #同步短剧观看进度
@@ -151,7 +173,7 @@ class PlayletController extends Base
             $result = false;
         } else {
 
-            $row = UsersPlayletLike::create(['user_id' => $request->user_id, 'playlet_detail_id' => $detail->id,'playlet_id' => $detail->playlet_id]);
+            $row = UsersPlayletLike::create(['user_id' => $request->user_id, 'playlet_detail_id' => $detail->id, 'playlet_id' => $detail->playlet_id]);
             $row->playlet()->increment('like_num');
             $row->playletDetail()->increment('like_num');
             $result = true;
@@ -260,12 +282,6 @@ class PlayletController extends Base
         ]);
         return $this->success('购买成功');
     }
-
-
-
-
-
-
 
 
 }

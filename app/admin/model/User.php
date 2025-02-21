@@ -41,6 +41,8 @@ use support\Db;
  * @property \Illuminate\Support\Carbon|null $vip_expire 会员过期时间
  * @property-read User|null $parent
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $class
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $children
+ * @property-read \app\admin\model\UsersClass|null $pivot
  * @mixin \Eloquent
  */
 class User extends Base
@@ -125,8 +127,12 @@ class User extends Base
 
     function class()
     {
-        return $this->belongsToMany(Classify::class,UsersClass::class,'user_id','class_id')
-            ->withTimestamps();
+        return $this->belongsToMany(Classify::class,UsersClass::class,'user_id','class_id')->withTimestamps();
+    }
+
+    function children()
+    {
+        return $this->hasMany(User::class, 'parent_id', 'id');
     }
 
 }

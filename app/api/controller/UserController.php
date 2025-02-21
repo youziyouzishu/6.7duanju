@@ -2,6 +2,7 @@
 
 namespace app\api\controller;
 
+use app\admin\model\Advice;
 use app\admin\model\Classify;
 use app\admin\model\Novel;
 use app\admin\model\NovelOrders;
@@ -178,7 +179,6 @@ class UserController extends Base
     }
 
 
-
     function getUserInfo(Request $request)
     {
         $user_id = $request->post('user_id');
@@ -186,6 +186,11 @@ class UserController extends Base
             $request->user_id = $user_id;
         }
         $row = User::find($request->user_id);
+        if ($row->created_at->addDays(7)->isPast() || RechargeOrders::where(['user_id' => $user_id, 'status' => 1])->exists()) {
+            $row->setAttribute('new', false);
+        } else {
+            $row->setAttribute('new', true);
+        }
         return $this->success('成功', $row);
     }
 
@@ -211,7 +216,7 @@ class UserController extends Base
     function getPoster(Request $request)
     {
         $user = User::find($request->user_id);
-        if ($request->client_type == 'mini'){
+        if ($request->client_type == 'mini') {
             $config = config('wechat.MiniApp');
             $app = new \EasyWeChat\MiniApp\Application($config);
             $data = [
@@ -221,8 +226,8 @@ class UserController extends Base
                 'check_path' => !config('app.debug'),
             ];
             $response = $app->getClient()->postJson('/wxa/getwxacodeunlimit', $data);
-            $base64 = "data:image/png;base64,".base64_encode($response->getContent());
-        }else{
+            $base64 = "data:image/png;base64," . base64_encode($response->getContent());
+        } else {
             $writer = new PngWriter();
             $qrCode = new QrCode(
                 data: 'https://longh.top/register/register.html#/?invitecode=' . $user->invitecode,
@@ -236,7 +241,7 @@ class UserController extends Base
             );
             $base64 = $writer->write($qrCode)->getDataUri();
         }
-        return $this->success('获取成功', ['base64' => $base64, 'invitecode' => $user->invitecode]);
+        return $this->success('获取成功', ['base64' => $base64, 'invitecode' => $user->invitecode, 'invite_count' => $user->children->count(), '']);
     }
 
 
@@ -244,14 +249,14 @@ class UserController extends Base
     function history(Request $request)
     {
         $type = $request->post('type');#类型  1=书籍   2=短剧
-        if ($type == 1){
+        if ($type == 1) {
             $list = UsersReadLog::with(['novel'])->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
-            foreach ($list as $item){
-                $bookrack = UsersBookrack::where('user_id', $request->user_id)->where('novel_id',$item->novel_id)->exists();
-                $item->setAttribute('bookrack_status',$bookrack);
+            foreach ($list as $item) {
+                $bookrack = UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $item->novel_id)->exists();
+                $item->setAttribute('bookrack_status', $bookrack);
             }
-        }else{
-            $list = UsersPlayletLog::where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
+        } else {
+            $list = UsersPlayletLog::with(['playlet'])->where('user_id', $request->user_id)->orderBy('id', 'desc')->paginate()->items();
         }
         return $this->success('获取成功', $list);
     }
@@ -261,9 +266,9 @@ class UserController extends Base
     {
         $ids = $request->post('ids');
         $type = $request->post('type');#类型  1=书籍   2=短剧
-        if ($type == 1){
+        if ($type == 1) {
             UsersReadLog::whereIn('id', $ids)->delete();
-        }else{
+        } else {
             UsersPlayletLog::whereIn('id', $ids)->delete();
         }
         return $this->success('删除成功');
@@ -292,9 +297,9 @@ class UserController extends Base
     function getBuyList(Request $request)
     {
         $type = $request->post('type');#类型  1=书籍   2=短剧
-        if ($type == 1){
+        if ($type == 1) {
             $rows = NovelOrders::with(['novel'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('novel_id')->paginate()->items();
-        }else{
+        } else {
             $rows = PlayletOrders::with(['playlet'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('playlet_id')->paginate()->items();
         }
         return $this->success('获取成功', $rows);
@@ -304,26 +309,26 @@ class UserController extends Base
     function getUserClass(Request $request)
     {
         $data = [];
-        $user_class = UsersClass::where('user_id',$request->user_id)->pluck('class_id')->toArray();
-        $data['type_1'] = Classify::where('pid','<>',0)->where('type',1)->get()->each(function ($item)use($user_class){
-            if (in_array($item->id,$user_class)){
-                $item->setAttribute('exists',true);
-            }else{
-                $item->setAttribute('exists',false);
+        $user_class = UsersClass::where('user_id', $request->user_id)->pluck('class_id')->toArray();
+        $data['type_1'] = Classify::where('pid', '<>', 0)->where('type', 1)->get()->each(function ($item) use ($user_class) {
+            if (in_array($item->id, $user_class)) {
+                $item->setAttribute('exists', true);
+            } else {
+                $item->setAttribute('exists', false);
             }
         });
-        $data['type_2'] = Classify::where('pid','<>',0)->where('type',2)->get()->each(function ($item)use($user_class){
-            if (in_array($item->id,$user_class)){
-                $item->setAttribute('exists',true);
-            }else{
-                $item->setAttribute('exists',false);
+        $data['type_2'] = Classify::where('pid', '<>', 0)->where('type', 2)->get()->each(function ($item) use ($user_class) {
+            if (in_array($item->id, $user_class)) {
+                $item->setAttribute('exists', true);
+            } else {
+                $item->setAttribute('exists', false);
             }
         });
-        $data['type_3'] = Classify::where('pid','<>',0)->where('type',3)->get()->each(function ($item)use($user_class){
-            if (in_array($item->id,$user_class)){
-                $item->setAttribute('exists',true);
-            }else{
-                $item->setAttribute('exists',false);
+        $data['type_3'] = Classify::where('pid', '<>', 0)->where('type', 3)->get()->each(function ($item) use ($user_class) {
+            if (in_array($item->id, $user_class)) {
+                $item->setAttribute('exists', true);
+            } else {
+                $item->setAttribute('exists', false);
             }
         });
         return $this->success('获取成功', $data);
@@ -336,6 +341,27 @@ class UserController extends Base
         $user = User::find($request->user_id);
         $user->class()->sync($class_ids);
         return $this->success('更新成功');
+    }
+
+    #意见反馈
+    function addAdvice(Request $request)
+    {
+        $class_name = $request->post('class_name');
+        $content = $request->post('content');
+        $images = $request->post('images');
+        Advice::create([
+            'class_name' => $class_name,
+            'content' => $content,
+            'user_id' => $request->user_id,
+            'images' => $images,
+        ]);
+        return $this->success('添加成功');
+    }
+
+    function getTeam(Request $request)
+    {
+        $rows = User::where(['parent_id' => $request->user_id])->paginate()->items();
+        return $this->success('获取成功', $rows);
     }
 
 

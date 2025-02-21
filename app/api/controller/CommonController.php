@@ -4,6 +4,7 @@ namespace app\api\controller;
 
 use app\admin\model\Banner;
 use app\admin\model\Classify;
+use app\admin\model\Help;
 use app\admin\model\Vip;
 use app\api\basic\Base;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,6 +63,13 @@ class CommonController extends Base
         $config = Option::where('name', $name)->value('value');
         $config = json_decode($config);
         return $this->success('成功', $config);
+    }
+
+    #获取帮助列表
+    function getHelpList()
+    {
+        $rows = Help::all();
+        return $this->success('成功', $rows);
     }
 
 }

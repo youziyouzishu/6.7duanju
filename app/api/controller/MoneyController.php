@@ -3,7 +3,9 @@
 namespace app\api\controller;
 
 use app\admin\model\RechargeOrders;
+use app\admin\model\User;
 use app\admin\model\UsersScoreLog;
+use app\admin\model\UsersWithdraw;
 use app\api\basic\Base;
 use app\api\service\Pay;
 use Carbon\Carbon;
@@ -35,7 +37,7 @@ class MoneyController extends Base
 
     function getMoneyLog(Request $request)
     {
-        $type = $request->post('type');
+        $type = $request->post('type');#money = 金币
         $date = $request->post('date');
         $status = $request->post('status'); #0=全部 1=支出，2=收入
         $date = Carbon::parse($date);
@@ -61,6 +63,41 @@ class MoneyController extends Base
                     $item->score = '+' . $item->score;
                 }
             });
+        return $this->success('获取成功', $rows);
+    }
+
+    #提现
+    function doWithdraw(Request $request)
+    {
+        $withdraw_amount = $request->post('withdraw_amount');
+        $ali_name = $request->post('ali_name');
+        $ali_account = $request->post('ali_account');
+        $user = User::find($request->user_id);
+        if ($user->money < $withdraw_amount) {
+            return $this->fail('余额不足');
+        }
+        $chance_rate = 0.1;
+        $chance_amount = $withdraw_amount * $chance_rate;
+        $into_amount = $withdraw_amount - $chance_amount;
+        User::score(-$withdraw_amount, $request->user_id, '用户提现', 'money');
+        UsersWithdraw::create([
+            'user_id' => $request->user_id,
+            'withdraw_amount' => $withdraw_amount,
+            'chance_amount' => $chance_amount,
+            'into_amount'=> $into_amount,
+            'ali_name' => $ali_name,
+            'ali_account' => $ali_account,
+            'chance_rate'=> $chance_rate,
+        ]);
+        return $this->success('提交成功');
+    }
+
+    function getWithdrawList(Request $request)
+    {
+        $rows = UsersWithdraw::where('user_id', $request->user_id)
+            ->orderByDesc('id')
+            ->paginate()
+            ->items();
         return $this->success('获取成功', $rows);
     }
 
