@@ -31,7 +31,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">内容</label>
                         <div class="layui-input-block">
-                            <textarea id="content" name="content" class="layui-textarea"></textarea>
+                            <textarea id="content" rows="10" name="content" class="layui-textarea"></textarea>
                         </div>
                     </div>
                     
@@ -78,18 +78,6 @@
             // 相关接口
             const INSERT_API = "/admin/novel-detail/insert";
 
-
-            // 字段 内容 content
-            layui.use(["tinymce"], function() {
-                var tinymce = layui.tinymce
-                var edit = tinymce.render({
-                    elem: "#content",
-                    images_upload_url: "/app/admin/upload/image",
-                });
-                edit.on("blur", function(){
-                    layui.$("#content").val(edit.getContent());
-                });
-            });
             
             //提交事件
             layui.use(["form", "popup"], function () {
