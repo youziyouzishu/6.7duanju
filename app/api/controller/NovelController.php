@@ -197,6 +197,9 @@ class NovelController extends Base
     function getBookrackList(Request $request)
     {
         $rows = UsersBookrack::with(['novel'])->where('user_id', $request->user_id)->orderByDesc('id')->paginate()->items();
+        foreach ($rows as $row) {
+            $row->setAttribute('bookrack_status', UsersBookrack::where('user_id', $request->user_id)->where('novel_id', $row->novel_id)->exists());
+        }
         return $this->success('成功', $rows);
     }
 

@@ -8,8 +8,10 @@ use app\admin\model\Help;
 use app\admin\model\Vip;
 use app\api\basic\Base;
 use Illuminate\Database\Eloquent\Builder;
+use plugin\admin\app\model\Dict;
 use plugin\admin\app\model\Option;
 use support\Request;
+use support\Response;
 
 class CommonController extends Base
 {
@@ -70,6 +72,13 @@ class CommonController extends Base
     {
         $rows = Help::all();
         return $this->success('成功', $rows);
+    }
+
+    #获取字典
+    public function getDict(Request $request): Response
+    {
+        $name = $request->post('name');
+        return $this->json(0, 'ok', (array)Dict::get($name));
     }
 
 }

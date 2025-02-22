@@ -16,6 +16,8 @@ use app\admin\model\UsersLayer;
 use app\admin\model\UsersPlayletLike;
 use app\admin\model\UsersPlayletLog;
 use app\admin\model\UsersReadLog;
+use app\admin\model\UsersScoreLog;
+use app\admin\model\UsersWithdraw;
 use app\api\basic\Base;
 use app\api\service\Pay;
 use Carbon\Carbon;
@@ -26,6 +28,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Database\Eloquent\Builder;
 use plugin\admin\app\common\Util;
 use plugin\admin\app\model\Option;
 use support\Db;
@@ -241,7 +244,15 @@ class UserController extends Base
             );
             $base64 = $writer->write($qrCode)->getDataUri();
         }
-        return $this->success('获取成功', ['base64' => $base64, 'invitecode' => $user->invitecode, 'invite_count' => $user->children->count(), '']);
+        $total_income = UsersScoreLog::where('user_id',$request->user_id)->whereIn('memo', ['开通会员返佣','充值金币返佣'])->sum('score');
+        $total_withdraw = UsersWithdraw::where('user_id',$request->user_id)->whereIn('status',[0,1])->sum('withdraw_amount');
+        return $this->success('获取成功', [
+            'base64' => $base64,
+            'invitecode' => $user->invitecode,
+            'invite_count' => $user->children->count(),
+            'total_income' => $total_income,
+            'total_withdraw'=>$total_withdraw,
+        ]);
     }
 
 
@@ -294,6 +305,7 @@ class UserController extends Base
         return $this->success('获取成功', $rows);
     }
 
+    #获取购买记录
     function getBuyList(Request $request)
     {
         $type = $request->post('type');#类型  1=书籍   2=短剧
@@ -362,7 +374,8 @@ class UserController extends Base
     function getTeamList(Request $request)
     {
         $rows = User::where(['parent_id' => $request->user_id])->paginate()->items();
-        return $this->success('获取成功', $rows);
+        $total_income = UsersScoreLog::where('user_id',$request->user_id)->whereIn('memo', ['开通会员返佣','充值金币返佣'])->sum('score');
+        return $this->success('获取成功', ['list'=>$rows,'total_income'=>$total_income]);
     }
 
 

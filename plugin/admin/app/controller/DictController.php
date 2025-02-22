@@ -66,7 +66,7 @@ class DictController extends Base
             if (Dict::get($name)) {
                 return $this->json(1, '字典已经存在');
             }
-            if (!preg_match('/^[a-zA-Z0-9]+$/', $name)) {
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
                 return $this->json(2, '字典名称只能是字母数字的组合');
             }
             $values = (array)$request->post('value', []);
@@ -88,7 +88,7 @@ class DictController extends Base
             if (!Dict::get($name)) {
                 return $this->json(1, '字典不存在');
             }
-            if (!preg_match('/^[a-zA-Z0-9]+$/', $name)) {
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
                 return $this->json(2, '字典名称只能是字母数字的组合');
             }
             Dict::save($name, $request->post('value'));

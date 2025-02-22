@@ -25,6 +25,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersWithdraw newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersWithdraw newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersWithdraw query()
+ * @property-read mixed $status_text
  * @mixin \Eloquent
  */
 class UsersWithdraw extends Base
