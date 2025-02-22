@@ -28,6 +28,7 @@ use plugin\admin\app\model\Base;
  * @property int $creation_status 状态:0=连载中,1=已完结
  * @property-read mixed $creation_status_text
  * @property int $play_num 播放次数
+ * @property-read \app\admin\model\SystemNotice|null $notice
  * @mixin \Eloquent
  */
 class Playlet extends Base
@@ -81,6 +82,11 @@ class Playlet extends Base
             1 => '已完结',
         ];
         return $list[$value] ?? '';
+    }
+
+    function notice()
+    {
+        return $this->morphOne(SystemNotice::class, 'noticeable');
     }
     
     

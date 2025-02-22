@@ -310,9 +310,9 @@ class UserController extends Base
     {
         $type = $request->post('type');#类型  1=书籍   2=短剧
         if ($type == 1) {
-            $rows = NovelOrders::with(['novel'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('novel_id')->paginate()->items();
+            $rows = NovelOrders::with(['novel','novelDetail'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->paginate()->items();
         } else {
-            $rows = PlayletOrders::with(['playlet'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->groupBy('playlet_id')->paginate()->items();
+            $rows = PlayletOrders::with(['playlet','playletDetail'])->where(['user_id' => $request->user_id])->orderBy('id', 'desc')->paginate()->items();
         }
         return $this->success('获取成功', $rows);
     }

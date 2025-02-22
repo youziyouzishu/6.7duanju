@@ -35,6 +35,7 @@ use plugin\admin\app\model\Base;
  * @property-read \app\admin\model\Classify|null $class
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\Classify> $tags
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\NovelDetail> $detail
+ * @property-read \app\admin\model\SystemNotice|null $notice
  * @mixin \Eloquent
  */
 class Novel extends Base
@@ -79,6 +80,11 @@ class Novel extends Base
             1 => '已完结',
         ];
         return $list[$value] ?? '';
+    }
+
+    function notice()
+    {
+        return $this->morphOne(SystemNotice::class, 'noticeable');
     }
 
 
