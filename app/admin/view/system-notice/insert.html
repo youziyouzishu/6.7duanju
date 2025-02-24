@@ -150,19 +150,18 @@
                     filterable: true,
                     clickClose: true,
                     radio: true,
-                    layVerify: "required",
                     prop: {
                         name: 'name',
                         value: 'id',
                     },
                 });
 
-                layui.xmSelect.render({
+                let noticeable_type = layui.xmSelect.render({
                     el: "#noticeable_type",
                     name: "noticeable_type",
                     filterable: true,
                     initValue: initValue,
-                    data: [{"value":"app\\admin\\model\\Novel","name":"好书推荐"},{"value":"app\\admin\\model\\Playlet","name":"好剧推荐"},{"value":"&#039;&#039;","name":"系统通知"}],
+                    data: [{"value":"app\\admin\\model\\Novel","name":"好书推荐"},{"value":"app\\admin\\model\\Playlet","name":"好剧推荐"},{"value":"0","name":"系统通知"}],
                     value: "",
                     model: {"icon":"hidden","label":{"type":"text"}},
                     clickClose: true,

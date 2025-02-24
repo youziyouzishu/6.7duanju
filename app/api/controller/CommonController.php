@@ -81,4 +81,5 @@ class CommonController extends Base
         return $this->json(0, 'ok', (array)Dict::get($name));
     }
 
+
 }

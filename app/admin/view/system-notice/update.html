@@ -28,11 +28,11 @@
                             <textarea name="description" class="layui-textarea"></textarea>
                         </div>
                     </div>
-                    
+
                     <div class="layui-form-item">
                         <label class="layui-form-label">详情</label>
                         <div class="layui-input-block">
-                            <textarea name="content" class="layui-textarea"></textarea>
+                            <textarea name="content" id="content" class="layui-textarea"></textarea>
                         </div>
                     </div>
                     
@@ -49,21 +49,24 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="layui-form-item">
-                        <label class="layui-form-label">关联数据</label>
-                        <div class="layui-input-block">
-                            <input type="text" name="noticeable_id" value="" class="layui-input">
-                        </div>
-                    </div>
-                    
+
                     <div class="layui-form-item">
                         <label class="layui-form-label">通知类型</label>
                         <div class="layui-input-block">
                             <div name="noticeable_type" id="noticeable_type" value="" ></div>
                         </div>
                     </div>
-                    
+
+                    <div class="layui-form-item noticeable_id">
+                        <label class="layui-form-label">关联数据</label>
+                        <div class="layui-input-block">
+                            <div name="noticeable_id" id="noticeable_id" value="0"></div>
+                        </div>
+                    </div>
+
+
+
+
                 </div>
             </div>
 
@@ -91,6 +94,8 @@
             const PRIMARY_KEY = "id";
             const SELECT_API = "/admin/system-notice/select" + location.search;
             const UPDATE_API = "/admin/system-notice/update";
+            const NOVEL_API = "/admin/novel/select";
+            const PLAYLET_API = "/admin/playlet/select";
 
             // 获取数据库记录
             layui.use(["form", "util", "popup"], function () {
@@ -115,7 +120,7 @@
                                 obj[0].value = value;
                             }
                         });
-                        
+
                         // 字段 图片 image
                         layui.use(["upload", "layer"], function() {
                             let input = layui.$("#image").prev();
@@ -144,21 +149,83 @@
                                 }
                             });
                         });
-                        
+
+
                         // 字段 关联模型 noticeable_type
                         layui.use(["jquery", "xmSelect"], function() {
                             let value = layui.$("#noticeable_type").attr("value");
                             let initValue = value ? value.split(",") : [];
-                            layui.xmSelect.render({
+                            let idSelect = layui.xmSelect.render({
+                                el: '#noticeable_id',
+                                name: 'noticeable_id',
+                                //配置搜索
+                                filterable: true,
+                                clickClose: true,
+                                radio: true,
+                                prop: {
+                                    name: 'name',
+                                    value: 'id',
+                                },
+                            });
+
+                            noticeable_type = layui.xmSelect.render({
                                 el: "#noticeable_type",
                                 name: "noticeable_type",
                                 filterable: true,
                                 initValue: initValue,
-                                data: [{"value":"app\\admin\\model\\Novel","name":"好书推荐"},{"value":"app\\admin\\model\\Playlet","name":"好剧推荐"},{"value":"&#039;&#039;","name":"系统通知"}],
+                                data: [{"value":"app\\admin\\model\\Novel","name":"好书推荐"},{"value":"app\\admin\\model\\Playlet","name":"好剧推荐"},{"value":"0","name":"系统通知"}],
+                                value: "",
                                 model: {"icon":"hidden","label":{"type":"text"}},
                                 clickClose: true,
                                 radio: true,
+                                on: function (data) {
+                                    var change = data.arr;
+                                    if (change.length > 0) {
+                                        var value = change[0].value;
+                                        if (value === "app\\admin\\model\\Novel"){
+                                            layui.$(".noticeable_id").removeClass("layui-hide")
+
+                                            idSelect.update({
+                                                remoteSearch:true,
+                                                data:[],
+                                                remoteMethod: function (val, cb, show, pageIndex) {
+                                                    layui.$.ajax({
+                                                        url: NOVEL_API,
+                                                        dataType: "json",
+                                                        data: {
+                                                            name: val
+                                                        },
+                                                        success: function (res) {
+                                                            cb(res.data);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }else if (value === "app\\admin\\model\\Playlet"){
+                                            layui.$(".noticeable_id").removeClass("layui-hide")
+                                            idSelect.update({
+                                                remoteSearch:true,
+                                                data:[],
+                                                remoteMethod: function (val, cb, show, pageIndex) {
+                                                    layui.$.ajax({
+                                                        url: PLAYLET_API,
+                                                        dataType: "json",
+                                                        data: {
+                                                            name: val
+                                                        },
+                                                        success: function (res) {
+                                                            cb(res.data);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }else{
+                                            layui.$(".noticeable_id").addClass("layui-hide")
+                                        }
+                                    }
+                                },
                             })
+                            noticeable_type.setValue(initValue, false, true);
                         });
 
 

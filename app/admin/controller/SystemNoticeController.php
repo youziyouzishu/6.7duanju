@@ -38,6 +38,19 @@ class SystemNoticeController extends Crud
     }
 
     /**
+     * 查询
+     * @param Request $request
+     * @return Response
+     * @throws BusinessException
+     */
+    public function select(Request $request): Response
+    {
+        [$where, $format, $limit, $field, $order] = $this->selectInput($request);
+        $query = $this->doSelect($where, $field, $order)->with(['noticeable']);
+        return $this->doFormat($query, $format, $limit);
+    }
+
+    /**
      * 插入
      * @param Request $request
      * @return Response
@@ -46,6 +59,12 @@ class SystemNoticeController extends Crud
     public function insert(Request $request): Response
     {
         if ($request->method() === 'POST') {
+            $noticeable_id = $request->post('noticeable_id');
+            if (empty($noticeable_id)) {
+                $request->setParams('post',[
+                    'noticeable_id'=>0
+                ]);
+            }
             return parent::insert($request);
         }
         return view('system-notice/insert');
@@ -60,6 +79,12 @@ class SystemNoticeController extends Crud
     public function update(Request $request): Response
     {
         if ($request->method() === 'POST') {
+            $noticeable_id = $request->post('noticeable_id');
+            if (empty($noticeable_id)) {
+                $request->setParams('post',[
+                    'noticeable_id'=>0
+                ]);
+            }
             return parent::update($request);
         }
         return view('system-notice/update');
