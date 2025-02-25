@@ -23,6 +23,7 @@ use plugin\admin\app\model\Base;
  * @property-read \app\admin\model\User|null $user
  * @property string|null $pay_time 支付时间
  * @property-read mixed $pay_type_text
+ * @property-read mixed $status_text
  * @mixin \Eloquent
  */
 class RechargeOrders extends Base
@@ -49,7 +50,7 @@ class RechargeOrders extends Base
     ];
 
     protected $appends = [
-        'pay_type_text'
+        'pay_type_text','status_text'
     ];
 
     function user()
@@ -67,6 +68,15 @@ class RechargeOrders extends Base
         return $list[$value] ?? '';
     }
 
+    function getStatusTextAttribute($value)
+    {
+        $value = $value ?: ($this->status ?? '');
+        $list = [
+            0 => '未支付',
+            1 => '已支付',
+        ];
+        return $list[$value] ?? '';
+    }
 
 
 }

@@ -70,5 +70,10 @@ class UsersWithdraw extends Base
         return $list[$value] ?? '';
     }
 
+    function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
 
 }

@@ -5,6 +5,7 @@ namespace app\api\controller;
 use app\admin\model\Banner;
 use app\admin\model\Classify;
 use app\admin\model\Help;
+use app\admin\model\SystemNotice;
 use app\admin\model\Vip;
 use app\api\basic\Base;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,5 +82,11 @@ class CommonController extends Base
         return $this->json(0, 'ok', (array)Dict::get($name));
     }
 
+
+    function getSystemNotice(Request $request)
+    {
+        $rows = SystemNotice::orderByDesc('id')->paginate()->items();
+        return $this->success('成功', $rows);
+    }
 
 }

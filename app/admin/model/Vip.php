@@ -7,7 +7,7 @@ use plugin\admin\app\model\Base;
 
 
 /**
- * 
+ *
  *
  * @property int $id 主键
  * @property string $name 月会员

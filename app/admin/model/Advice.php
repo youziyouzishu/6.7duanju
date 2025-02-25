@@ -19,6 +19,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Advice newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Advice newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Advice query()
+ * @property-read \app\admin\model\User|null $user
  * @mixin \Eloquent
  */
 class Advice extends Base
@@ -44,6 +45,11 @@ class Advice extends Base
         'content',
         'images',
     ];
+
+    function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 
 
 }
