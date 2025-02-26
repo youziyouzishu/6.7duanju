@@ -136,11 +136,12 @@ class NotifyController extends Base
                     $order->status = 1;
                     $order->pay_time = date('Y-m-d H:i:s');
                     $order->save();
-                    //增加用户余额
-                    User::score($order->pay_amount, $order->user_id, $order->pay_type_text . '充值', 'money');
+                    $inc_jinbi = $order->pay_amount * 100;
+                    //增加用户金币
+                    User::score($inc_jinbi, $order->user_id, $order->pay_type_text . '充值', 'money');
                     //给上级反佣金
                     if ($order->user->parent) {
-                        User::score(round($order->pay_amount * 0.2), $order->user->parent_id, '充值金币返佣', 'money');
+                        User::score(round($inc_jinbi * 0.2), $order->user->parent_id, '充值金币返佣', 'money');
                     }
                     break;
                 default:
@@ -148,8 +149,6 @@ class NotifyController extends Base
             }
             Db::connection('plugin.admin.mysql')->commit();
         } catch (\Throwable $e) {
-            dump($e->getMessage());
-            dump($e->getLine());
             Db::connection('plugin.admin.mysql')->rollBack();
             throw new \Exception($e->getMessage());
         }

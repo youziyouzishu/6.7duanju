@@ -2,6 +2,9 @@
 
 namespace plugin\admin\app\controller;
 
+use app\admin\model\RechargeOrders;
+use app\admin\model\UsersWithdraw;
+use app\admin\model\VipOrders;
 use plugin\admin\app\model\User;
 use support\exception\BusinessException;
 use support\Request;
@@ -35,8 +38,11 @@ class UserController extends Crud
      */
     public function index(): Response
     {
-
-        return raw_view('user/index');
+        $profit_amount = RechargeOrders::where(['status'=>1])->sum('pay_amount') + VipOrders::where(['status'=>1])->sum('pay_amount') - UsersWithdraw::where(['status'=>2])->sum('into_amount');
+        $data = [
+            'profit_amount' => $profit_amount,
+        ];
+        return view('user/index',$data);
     }
 
     /**
