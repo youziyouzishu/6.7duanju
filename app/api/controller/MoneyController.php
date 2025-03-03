@@ -18,6 +18,9 @@ class MoneyController extends Base
     function recharge(Request $request)
     {
         $amount = $request->post('amount');
+        if (empty($amount)||$amount < 1) {
+            return $this->fail('充值金额不能小于1');
+        }
         $pay_type = $request->post('pay_type');#支付方式:1=微信,2=支付宝
         $ordersn = Util::generateOrdersn();
         RechargeOrders::create([

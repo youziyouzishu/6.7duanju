@@ -3,7 +3,7 @@
 return [
     'OpenPlatform'=>[
         'app_id' => 'wx625b4a5a416cb439', // 开放平台账号的 appid
-        'secret' => '98cb86e784433f76e8d122c97231d889',   // 开放平台账号的 secret
+        'secret' => '91867f28e331539b2e0ff8460ad472f4',   // 开放平台账号的 secret
         'token' => 'easywechat',  // 开放平台账号的 token
         'aes_key' => '',   // 明文模式请勿填写 EncodingAESKey
 

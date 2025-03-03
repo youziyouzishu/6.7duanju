@@ -4,7 +4,6 @@ namespace app\api\controller;
 
 use app\admin\model\Advice;
 use app\admin\model\Classify;
-use app\admin\model\Novel;
 use app\admin\model\NovelOrders;
 use app\admin\model\PlayletOrders;
 use app\admin\model\RechargeOrders;
@@ -19,18 +18,14 @@ use app\admin\model\UsersReadLog;
 use app\admin\model\UsersScoreLog;
 use app\admin\model\UsersWithdraw;
 use app\api\basic\Base;
-use app\api\service\Pay;
 use Carbon\Carbon;
-
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
-use Illuminate\Database\Eloquent\Builder;
 use plugin\admin\app\common\Util;
-use plugin\admin\app\model\Option;
 use support\Db;
 use support\Request;
 use support\Response;
@@ -153,27 +148,8 @@ class UserController extends Base
             'invitecode' => Util::generateInvitecode(),
         ]);
 
-        if (isset($parent)) {
-            // 增加直推关系
-            UsersLayer::create([
-                'user_id' => $user->id,
-                'parent_id' => $parent->id,
-                'layer' => 1
-            ]);
-            // 收集多层关系数据
-            $layersToInsert = [];
-            UsersLayer::where('user_id', $parent->id)->get()->each(function (UsersLayer $item) use ($user, &$layersToInsert) {
-                $layersToInsert[] = [
-                    'user_id' => $user->id,
-                    'parent_id' => $item->parent_id,
-                    'layer' => $item->layer + 1
-                ];
-            });
-            // 批量插入多层关系
-            if (!empty($layersToInsert)) {
-                UsersLayer::insert($layersToInsert);
-            }
-        }
+
+
         $token = JwtToken::generateToken([
             'id' => $user->id,
             'client' => JwtToken::TOKEN_CLIENT_MOBILE
