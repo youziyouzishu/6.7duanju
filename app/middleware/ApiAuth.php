@@ -15,13 +15,13 @@ class ApiAuth implements MiddlewareInterface
     {
 
         $client_type = $request->header('client-type');
-
         if (!empty($client_type) && !in_array($client_type, ['app', 'mini'])) {
             return json(['code' => 0, 'msg' => '非法访问', 'data' => []]);
         }
         $request->client_type = $client_type;
         // 通过反射获取控制器哪些方法不需要登录
-        if (!empty($request->controller)) {  #路由中return无实际controller
+        if (!empty($request->controller)) {
+            #路由中return无实际controller
             $controller = new ReflectionClass($request->controller);
             $noNeedLogin = $controller->getDefaultProperties()['noNeedLogin'] ?? [];
             $arr = array_map('strtolower', $noNeedLogin);

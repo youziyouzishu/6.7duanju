@@ -100,5 +100,10 @@ class Novel extends Base
         return $list[$value] ?? '';
     }
 
+    function report()
+    {
+        return $this->morphMany(UsersReport::class, 'reportable','able_type','able_id');
+    }
+
 
 }

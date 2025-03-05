@@ -4,7 +4,9 @@ namespace app\api\controller;
 
 use app\admin\model\Advice;
 use app\admin\model\Classify;
+use app\admin\model\Novel;
 use app\admin\model\NovelOrders;
+use app\admin\model\Playlet;
 use app\admin\model\PlayletOrders;
 use app\admin\model\RechargeOrders;
 use app\admin\model\Sms;
@@ -19,6 +21,7 @@ use app\admin\model\UsersScoreLog;
 use app\admin\model\UsersWithdraw;
 use app\api\basic\Base;
 use Carbon\Carbon;
+use EasyWeChat\OpenPlatform\Application;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -27,9 +30,12 @@ use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use plugin\admin\app\common\Util;
 use support\Db;
+use support\exception\BusinessException;
+use support\Log;
 use support\Request;
 use support\Response;
 use Tinywan\Jwt\JwtToken;
+use Tinywan\Validate\Facade\Validate;
 
 class UserController extends Base
 {
@@ -48,7 +54,9 @@ class UserController extends Base
                 return $this->fail('账户不存在或密码错误');
             }
         } elseif ($login_type == 2) {
-
+            if (empty($code)){
+                return $this->fail('请先获取code');
+            }
             if ($request->client_type == 'app') {
                 $config = config('wechat.OpenPlatform');
                 $app = new \EasyWeChat\OpenPlatform\Application($config);
@@ -58,8 +66,10 @@ class UserController extends Base
                 } catch (\Throwable $e) {
                     return $this->fail($e->getMessage());
                 }
+                Log::info('微信登陆');
+                Log::info(json_encode($response));
                 $openid = $response->getId();
-                $wechat_unionid = '';
+                $wechat_unionid = $response->getRaw()['unionid'];
                 $user = User::where(['wechat_unionid' => $wechat_unionid])->first();
             } else {
                 //小程序
@@ -71,6 +81,8 @@ class UserController extends Base
                 } catch (\Throwable $e) {
                     return $this->fail($e->getMessage());
                 }
+                Log::info('小程序登录');
+                Log::info(json_encode($response));
                 $openid = $response['openid'];
                 $wechat_unionid = '';
                 $user = User::where(['wechat_unionid' => $wechat_unionid])->first();
@@ -85,6 +97,7 @@ class UserController extends Base
                     'platform_open_id' => $request->client_type == 'app' ? $openid : '',
                     'mini_open_id' => $request->client_type == 'mini' ? $openid : '',
                     'wechat_unionid' => $wechat_unionid,
+                    'mobile'=>''
                 ]);
             } else {
                 if ($request->client_type == 'app' && empty($user->platform_open_id)) {
@@ -155,6 +168,26 @@ class UserController extends Base
             'client' => JwtToken::TOKEN_CLIENT_MOBILE
         ]);
         return $this->success('注册成功', ['user' => $user, 'token' => $token]);
+    }
+
+    #更改密码
+    function changePassword(Request $request)
+    {
+        $password = $request->post('password');
+        $password_confirm = $request->post('password_confirm');
+        $mobile = $request->post('mobile');
+        $captcha = $request->post('captcha');
+        if ($password !== $password_confirm) {
+            return $this->fail('两次密码不一致');
+        }
+        $captchaResult = Sms::check($mobile, $captcha, 'changepwd');
+        if (!$captchaResult) {
+            return $this->fail('验证码错误');
+        }
+        $user = User::find($request->user_id);
+        $user->password = Util::passwordHash($password);
+        $user->save();
+        return $this->success();
     }
 
 
@@ -353,6 +386,72 @@ class UserController extends Base
         $total_income = UsersScoreLog::where('user_id',$request->user_id)->whereIn('memo', ['开通会员返佣','充值金币返佣'])->sum('score');
         return $this->success('获取成功', ['list'=>$rows,'total_income'=>$total_income]);
     }
+
+    #绑定微信
+    function bindWechat(Request $request)
+    {
+        $code = $request->post('code');
+        $config = config('wechat.OpenPlatform');
+        $app = new Application($config);
+        $oauth = $app->getOauth();
+        try {
+            $response = $oauth->userFromCode($code);
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage());
+        }
+        $user = User::find($request->user_id);
+        $user->platform_open_id = $response->getId();
+        $user->save();
+        return $this->success('绑定成功');
+    }
+
+    #举报
+    function report(Request $request)
+    {
+        $id = $request->post('id');
+        $type = $request->post('type');
+        if ($type == 1) {
+            $row = Novel::find($id);
+        }else{
+            $row = Playlet::find($id);
+        }
+        $report = $row->report()->where(['user_id'=>$request->user_id])->first();
+        if ($report){
+            $report->updated_at = date('Y-m-d H:i:s');
+            $report->save();
+        }else{
+            $row->report()->create([
+                'user_id'=>$request->user_id,
+            ]);
+        }
+        return $this->success('举报成功');
+    }
+
+    #绑定手机号
+    function bindMobile(Request $request)
+    {
+        $mobile = $request->post('mobile');
+        $captcha = $request->post('captcha');
+        if (!$mobile || !Validate::checkRule($mobile, 'mobile')) {
+            return $this->fail('手机号不正确');
+        }
+        $smsResult = Sms::check($mobile, $captcha, 'changemobile');
+        if (!$smsResult) {
+            return $this->fail('验证码不正确');
+        }
+        $user = User::where('mobile', $mobile)->first();
+        if ($user) {
+            return $this->fail('手机号已被绑定');
+        }
+        $user = User::find($request->user_id);
+        $user->mobile = $mobile;
+        $user->username = $mobile;
+        $user->save();
+        return $this->success();
+    }
+
+
+
 
 
 

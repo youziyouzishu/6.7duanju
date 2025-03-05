@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "346181c2b24fafab7616c8c5667177ae",
+    "content-hash": "b2d02fb4a8075ee7df4345c66c8f01c7",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -6136,6 +6136,40 @@
                 "source": "https://github.com/webman-php/event/tree/v1.0.5"
             },
             "time": "2023-12-04T09:22:12+00:00"
+        },
+        {
+            "name": "webman/log",
+            "version": "v1.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/webman-php/log.git",
+                "reference": "7c2f1c7d032a7a5d3d876da7b9b1145032e11eee"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/webman-php/log/zipball/7c2f1c7d032a7a5d3d876da7b9b1145032e11eee",
+                "reference": "7c2f1c7d032a7a5d3d876da7b9b1145032e11eee",
+                "shasum": ""
+            },
+            "require": {
+                "workerman/webman-framework": ">=1.5.15"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Webman\\Log\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Webman plugin webman/log",
+            "support": {
+                "issues": "https://github.com/webman-php/log/issues",
+                "source": "https://github.com/webman-php/log/tree/v1.2.1"
+            },
+            "time": "2025-01-10T08:39:44+00:00"
         },
         {
             "name": "workerman/webman-framework",

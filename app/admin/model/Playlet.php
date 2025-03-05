@@ -29,6 +29,7 @@ use plugin\admin\app\model\Base;
  * @property-read mixed $creation_status_text
  * @property int $play_num 播放次数
  * @property-read \app\admin\model\SystemNotice|null $notice
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \app\admin\model\UsersReport> $report
  * @mixin \Eloquent
  */
 class Playlet extends Base
@@ -88,7 +89,13 @@ class Playlet extends Base
     {
         return $this->morphOne(SystemNotice::class, 'noticeable');
     }
-    
+
+
+    function report()
+    {
+        return $this->morphMany(UsersReport::class, 'reportable','able_type','able_id');
+    }
+
     
     
 }

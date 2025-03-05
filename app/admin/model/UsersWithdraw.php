@@ -26,6 +26,7 @@ use plugin\admin\app\model\Base;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersWithdraw newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|UsersWithdraw query()
  * @property-read mixed $status_text
+ * @property-read \app\admin\model\User|null $user
  * @mixin \Eloquent
  */
 class UsersWithdraw extends Base
