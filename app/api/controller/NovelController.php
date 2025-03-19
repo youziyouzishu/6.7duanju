@@ -155,6 +155,9 @@ class NovelController extends Base
     function getChapterDetail(Request $request)
     {
         $detail_id = $request->post('detail_id');
+        if (!$detail_id) {
+            return $this->fail('参数不能为空');
+        }
         #获取小说详情
         $row = NovelDetail::with(['readLog' => function ($builder) use ($request) {
             $builder->where('user_id', $request->user_id);
@@ -166,8 +169,16 @@ class NovelController extends Base
         } else {
             $row->setAttribute('lock', true);
         }
-        return $this->success('成功', $row);
+        $buy_chapter = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $row->novel_id)->where('type', 1)->pluck('novel_detail_id')->toArray();
+        #后面的5章
+        $next = NovelDetail::where('novel_id', $row->novel_id)->where(function (Builder $query)use($lock,$buy_chapter){
+            if (!$lock){
+                $query->orWhere('price',0)->orWhereIn('id',$buy_chapter);
+            }
+        })->where('index', '>', $row->index)->take(5)->get();
+        return $this->success('成功', ['current'=>$row,'next'=>$next]);
     }
+
 
     #详情-推荐
     function getRecommendOfNovel(Request $request)
@@ -227,6 +238,9 @@ class NovelController extends Base
         $detail_id = $request->post('detail_id');
         $chapter = NovelDetail::find($detail_id);
         $user = User::find($request->user_id);
+        if (!$user) {
+            return $this->fail('用户不存在');
+        }
         //查询出剩余未购买的章节
         $totalPrice = NovelDetail::where('novel_id', $chapter->novel_id)->whereNotIn('id', function ($query) use ($request, $chapter) {
             $query->select('novel_detail_id')->from('wa_novel_orders')->where('novel_id', $chapter->novel_id)->where('user_id', $request->user_id)->where('type', 1);
@@ -245,6 +259,10 @@ class NovelController extends Base
             return $this->fail('用户或章节不存在');
         }
 
+        $lock = NovelOrders::where('user_id', $request->user_id)->where('novel_id', $chapter->novel_id)->where('type', 2)->exists();#整本
+        if ($lock) {
+            return $this->fail('整本已购买');
+        }
 
         $already = NovelOrders::where('user_id', $request->user_id)->where('novel_detail_id', $detail_id)->where('type', 1)->exists();
         if ($already) {

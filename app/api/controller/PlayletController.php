@@ -21,15 +21,20 @@ class PlayletController extends Base
     #获取列表
     function getPlayletList(Request $request)
     {
-        $type = $request->post('type');#类型:1=本周热门 2=本周排行 3=最近热播
+
+        $type = $request->post('type');#类型:0=全部 1=本周热门 2=本周排行 3=最近热播
         $tag_ids = $request->post('tag_ids');#标签ids [1,2,3]
-        $serie_num = $request->post('serie_num');#0=不限 1=1-30集 ，2=30-60 ，3=60-90，4=90-120，5=120以上
+        $serie_num = $request->post('serie_num');#集数 0=不限 1=1-30集 ，2=30-60 ，3=60-90，4=90-120，5=120以上
+        $keyword = $request->post('keyword');
         $tag_count = !empty($tag_ids) ? count($tag_ids) : 0;
         if ($tag_count >= 4) {
             return $this->fail('标签不能超过3个');
         }
         $rows = Playlet::where('status', 1)
             ->withCount('detail')
+            ->when(!empty($keyword), function (Builder $builder) use ($keyword) {
+                $builder->where('name', 'like', '%' . $keyword . '%');
+            })
             ->when(!empty($serie_num),function (Builder $query)use($serie_num){
                 if ($serie_num == 1){
                     $query->has('detail','>=',1)->has('detail', '<=', 30);

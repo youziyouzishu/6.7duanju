@@ -13,7 +13,6 @@ use app\admin\model\Sms;
 use app\admin\model\User;
 use app\admin\model\UsersBookrack;
 use app\admin\model\UsersClass;
-use app\admin\model\UsersLayer;
 use app\admin\model\UsersPlayletLike;
 use app\admin\model\UsersPlayletLog;
 use app\admin\model\UsersReadLog;
@@ -45,15 +44,9 @@ class UserController extends Base
     {
         $mobile = $request->post('mobile');
         $captcha = $request->post('captcha');
-        $password = $request->post('password');
         $code = $request->post('code');
         $login_type = $request->post('login_type');# 1=密码登录 2=微信登陆 3=手机号登录
-        if ($login_type == 1) {
-            $user = User::where(['mobile' => $mobile])->first();
-            if (!$user || !Util::passwordVerify($password, $user->password)) {
-                return $this->fail('账户不存在或密码错误');
-            }
-        } elseif ($login_type == 2) {
+       if ($login_type == 2) {
             if (empty($code)){
                 return $this->fail('请先获取code');
             }
@@ -84,7 +77,7 @@ class UserController extends Base
                 Log::info('小程序登录');
                 Log::info(json_encode($response));
                 $openid = $response['openid'];
-                $wechat_unionid = '';
+                $wechat_unionid = $response['unionid'];
                 $user = User::where(['wechat_unionid' => $wechat_unionid])->first();
             }
             if (!$user) {
@@ -109,13 +102,21 @@ class UserController extends Base
             }
         } elseif ($login_type == 3) {
             $user = User::where(['mobile' => $mobile])->first();
-            if (!$user) {
-                return $this->fail('账户不存在');
-            }
             $smsResult = Sms::check($mobile, $captcha, 'login');
             if (!$smsResult) {
                 return $this->fail('验证码错误');
             }
+            if (!$user) {
+                $user = User::create([
+                    'nickname' => '用户' . Util::alnum(),
+                    'avatar' => '/app/admin/avatar.png',
+                    'join_time' => Carbon::now()->toDateTimeString(),
+                    'join_ip' => $request->getRealIp(),
+                    'invitecode' => Util::generateInvitecode(),
+                    'mobile'=> $mobile,
+                ]);
+            }
+
         } else {
             return $this->fail('登陆方式错误');
         }
@@ -154,7 +155,6 @@ class UserController extends Base
             'join_ip' => $request->getRealIp(),
             'last_time' => Carbon::now()->toDateTimeString(),
             'last_ip' => $request->getRealIp(),
-            'username' => $mobile,
             'mobile' => $mobile,
             'password' => Util::passwordHash($password),
             'parent_id' => isset($parent) ? $parent->id : 0,
@@ -198,7 +198,11 @@ class UserController extends Base
             $request->user_id = $user_id;
         }
         $row = User::find($request->user_id);
-        if ($row->created_at->addDays(7)->isPast() || RechargeOrders::where(['user_id' => $user_id, 'status' => 1])->exists()) {
+        if (!$row) {
+            return $this->fail('用户不存在');
+        }
+
+        if ($row->created_at->addDays(7)->isPast() || RechargeOrders::where(['user_id' => $request->user_id, 'status' => 1])->exists()) {
             $row->setAttribute('new', false);
         } else {
             $row->setAttribute('new', true);
@@ -400,7 +404,15 @@ class UserController extends Base
             return $this->fail($e->getMessage());
         }
         $user = User::find($request->user_id);
-        $user->platform_open_id = $response->getId();
+        $platform_open_id = $response->getId();
+        $wechat_unionid = $response->getRaw()['unionid'];
+
+        $users = User::where('platform_open_id', $platform_open_id)->first();
+        if ($users) {
+            return $this->fail('该微信已绑定其他账号');
+        }
+        $user->platform_open_id = $platform_open_id;
+        $user->wechat_unionid = $wechat_unionid;
         $user->save();
         return $this->success('绑定成功');
     }
@@ -445,9 +457,41 @@ class UserController extends Base
         }
         $user = User::find($request->user_id);
         $user->mobile = $mobile;
-        $user->username = $mobile;
         $user->save();
         return $this->success();
+    }
+
+    function bindWechatMobile(Request $request)
+    {
+        $code = $request->post('code');
+        //小程序
+        $config = config('wechat.MiniApp');
+        $app = new \EasyWeChat\MiniApp\Application($config);
+        $api = $app->getClient();
+        $ret = $api->postJson('/wxa/business/getuserphonenumber', [
+            'code' => $code
+        ]);
+        $ret = json_decode($ret);
+        if ($ret->errcode != 0) {
+            return $this->fail('获取手机号失败');
+        }
+        $mobile = $ret->phone_info->phoneNumber;
+        $user = User::find($request->user_id);
+        if ($row = User::where('mobile', $mobile)->first()){
+            $row->mini_open_id = $user->mini_open_id;
+            $row->wechat_unionid = $user->wechat_unionid;
+            $row->save();
+            $user->delete();
+            $user = $row;
+        }else{
+            $user->mobile = $mobile;
+            $user->save();
+        }
+        $token = JwtToken::generateToken([
+            'id' => $user->id,
+            'client' => JwtToken::TOKEN_CLIENT_MOBILE
+        ]);
+        return $this->success('成功',['user'=>$user,'token'=>$token]);
     }
 
 
